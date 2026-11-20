@@ -13,7 +13,7 @@ async function AllLocations() {
 
 export default function MapPage() {
   return (
-    <main className="container">
+    <main id="main" className="container">
       <h1>Harita</h1>
       <Suspense fallback={<p className="muted">Yükleniyor…</p>}><AllLocations /></Suspense>
     </main>

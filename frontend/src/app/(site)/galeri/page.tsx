@@ -31,7 +31,7 @@ async function List() {
 
 export default function GalleriesPage() {
   return (
-    <main className="container">
+    <main id="main" className="container">
       <h1>Galeri</h1>
       <Suspense fallback={<p className="muted">Yükleniyor…</p>}><List /></Suspense>
     </main>

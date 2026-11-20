@@ -98,3 +98,16 @@ figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 0.4rem; }
 
 /* Harita */
 .map { width: 100%; border-radius: 10px; border: 1px solid var(--line); z-index: 0; }
+
+/* Ortak düğme */
+.btn { font: inherit; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem; padding: 0.45rem 0.85rem; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); text-decoration: none; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Erişilebilirlik */
+.skip-link { position: absolute; left: 8px; top: -48px; background: var(--accent); color: #fff; padding: 0.5rem 0.9rem; border-radius: 8px; z-index: 10; text-decoration: none; }
+.skip-link:focus { top: 8px; color: #fff; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.site-footer { max-width: 1040px; margin: 2rem auto 0; padding: 1.5rem 16px 2.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

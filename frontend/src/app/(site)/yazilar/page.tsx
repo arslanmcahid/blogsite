@@ -13,7 +13,7 @@ async function List() {
 
 export default function PostsPage() {
   return (
-    <main className="container">
+    <main id="main" className="container">
       <h1>Yazılar</h1>
       <Suspense fallback={<p className="muted">Yükleniyor…</p>}><List /></Suspense>
     </main>
