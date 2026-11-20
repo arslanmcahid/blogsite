@@ -1,48 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { adminFetch, errorMessage, useApi } from "@/lib/admin-api";
+import { newId } from "@/lib/editor-model";
 import type { HomeLayout, HomeSection } from "@/lib/types";
+import { DragHandle, SortableList } from "@/components/admin/Sortable";
+import { useToast } from "@/components/admin/Toast";
 
-const LABELS: Record<HomeSection["type"], string> = {
-  featured_post: "Öne çıkan yazı (en yeni yazı)",
-  latest_posts: "Son yazılar",
-  gallery_showcase: "Sergi vitrini",
-  map: "Konum haritası",
-  text: "Serbest metin",
+const INFO: Record<HomeSection["type"], { label: string; emoji: string; hint: string }> = {
+  featured_post: { label: "Öne çıkan yazı", emoji: "⭐", hint: "En yeni yazın büyük kartla gösterilir." },
+  latest_posts: { label: "Son yazılar", emoji: "📰", hint: "En yeni yazıların küçük kartları." },
+  gallery_showcase: { label: "Sergi vitrini", emoji: "🎞️", hint: "Fotoğraf sergilerin." },
+  map: { label: "Gezi haritası", emoji: "📍", hint: "Tüm konum etiketlerin tek haritada." },
+  text: { label: "Serbest yazı", emoji: "💬", hint: "Karşılama mesajı gibi kısa bir metin." },
 };
 const HAS_LIMIT: HomeSection["type"][] = ["latest_posts", "gallery_showcase"];
 
-function move<T>(list: T[], from: number, to: number): T[] {
-  if (to < 0 || to >= list.length) return list;
-  const next = [...list];
-  next.splice(to, 0, next.splice(from, 1)[0]);
-  return next;
-}
+type Item = HomeSection & { id: string };
 
 function HomeForm({ initial }: { initial: HomeSection[] }) {
-  const [sections, setSections] = useState(initial);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const toast = useToast();
+  const [sections, setSections] = useState<Item[]>(() => initial.map((s) => ({ ...s, id: newId() })));
   const [busy, setBusy] = useState(false);
 
-  const patch = (i: number, p: Partial<HomeSection>) => setSections(sections.map((s, j) => (j === i ? { ...s, ...p } : s)));
+  const clean = (list: Item[]): HomeSection[] =>
+    list.map((s) => {
+      const out: HomeSection = { type: s.type };
+      if (s.title?.trim()) out.title = s.title.trim();
+      if (HAS_LIMIT.includes(s.type) && s.limit) out.limit = s.limit;
+      if (s.type === "text") out.markdown = s.markdown ?? "";
+      return out;
+    });
+
+  const snapshot = JSON.stringify(clean(sections));
+  const [saved, setSaved] = useState(snapshot);
+  const dirty = snapshot !== saved;
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const patch = (id: string, p: Partial<HomeSection>) => setSections((list) => list.map((s) => (s.id === id ? { ...s, ...p } : s)));
 
   async function save() {
     setBusy(true);
-    setMsg(null);
     try {
-      // Boş alanları göndermeyelim (backend limit için 1-50 arası sayı bekler).
-      const clean = sections.map((s) => {
-        const out: HomeSection = { type: s.type };
-        if (s.title?.trim()) out.title = s.title.trim();
-        if (HAS_LIMIT.includes(s.type) && s.limit) out.limit = s.limit;
-        if (s.type === "text") out.markdown = s.markdown ?? "";
-        return out;
-      });
-      await adminFetch<HomeLayout>("/api/home/", { method: "PUT", json: { sections: clean } });
-      setMsg({ ok: true, text: "Ana sayfa düzeni kaydedildi." });
+      await adminFetch<HomeLayout>("/api/home/", { method: "PUT", json: { sections: clean(sections) } });
+      setSaved(snapshot);
+      toast.success("Ana sayfa düzeni kaydedildi.", { label: "Sitede gör", onClick: () => window.open("/", "_blank") });
     } catch (e) {
-      setMsg({ ok: false, text: errorMessage(e) });
+      toast.error(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -53,38 +63,49 @@ function HomeForm({ initial }: { initial: HomeSection[] }) {
       <div className="toolbar">
         <h1>Ana sayfa düzeni</h1>
         <span className="spacer" />
-        <button className="btn primary" onClick={save} disabled={busy}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
+        <span className="save-state">{dirty ? "Kaydedilmemiş değişiklikler var" : ""}</span>
+        <button className="btn primary" onClick={save} disabled={busy || !dirty}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
       </div>
-      {msg && <p className={msg.ok ? "admin-ok" : "admin-error"} role="status">{msg.text}</p>}
-      <p className="muted small">Bölümler ana sayfada yukarıdan aşağıya bu sırayla görünür.</p>
+      <p className="muted">Ana sayfanda görünecek bölümleri istediğin sırayla diz. Bir bölümü ⠿ simgesinden tutup sürükleyebilirsin.</p>
 
-      <div className="blocklist">
-        {sections.map((s, i) => (
-          <div className="block" key={i}>
+      <SortableList items={sections} onChange={setSections} className="blocklist">
+        {(s, i, handle, dragging) => (
+          <section className={`block ${dragging ? "dragging" : ""}`} style={{ marginBottom: "0.8rem" }}>
             <div className="block-head">
-              <strong>{LABELS[s.type]}</strong>
+              <DragHandle handle={handle} label={`${INFO[s.type].label} bölümünü sürükle`} />
+              <span aria-hidden>{INFO[s.type].emoji}</span>
+              <strong>{INFO[s.type].label}</strong>
+              <span className="muted small">{INFO[s.type].hint}</span>
               <span className="spacer" />
-              <button type="button" className="icon" disabled={i === 0} onClick={() => setSections(move(sections, i, i - 1))} title="Yukarı">↑</button>
-              <button type="button" className="icon" disabled={i === sections.length - 1} onClick={() => setSections(move(sections, i, i + 1))} title="Aşağı">↓</button>
-              <button type="button" className="icon danger" onClick={() => setSections(sections.filter((_, j) => j !== i))} title="Kaldır">✕</button>
+              <button type="button" className="icon" aria-label="Yukarı taşı" disabled={i === 0} onClick={() => setSections((l) => { const n = [...l]; n.splice(i - 1, 0, n.splice(i, 1)[0]); return n; })}>↑</button>
+              <button type="button" className="icon" aria-label="Aşağı taşı" disabled={i === sections.length - 1} onClick={() => setSections((l) => { const n = [...l]; n.splice(i + 1, 0, n.splice(i, 1)[0]); return n; })}>↓</button>
+              <button type="button" className="icon danger" aria-label="Bu bölümü kaldır" title="Ana sayfadan kaldır" onClick={() => setSections((l) => l.filter((x) => x.id !== s.id))}>🗑</button>
             </div>
             <div className="grid2">
-              <label>Bölüm başlığı<input value={s.title ?? ""} onChange={(e) => patch(i, { title: e.target.value })} /></label>
+              <label>Bölüm başlığı <span className="muted">(boş bırakabilirsin)</span><input value={s.title ?? ""} onChange={(e) => patch(s.id, { title: e.target.value })} /></label>
               {HAS_LIMIT.includes(s.type) && (
-                <label>Kaç öğe gösterilsin (1-50)
-                  <input type="number" min={1} max={50} value={s.limit ?? ""} onChange={(e) => patch(i, { limit: e.target.value ? Number(e.target.value) : undefined })} />
+                <label>Kaç tane gösterilsin?
+                  <input type="number" min={1} max={50} value={s.limit ?? ""} placeholder="Varsayılan" onChange={(e) => patch(s.id, { limit: e.target.value ? Number(e.target.value) : undefined })} />
                 </label>
               )}
             </div>
             {s.type === "text" && (
-              <label>Metin (Markdown)<textarea rows={5} value={s.markdown ?? ""} onChange={(e) => patch(i, { markdown: e.target.value })} /></label>
+              <label>Mesajın<textarea rows={4} value={s.markdown ?? ""} onChange={(e) => patch(s.id, { markdown: e.target.value })} placeholder="Örn. Merhaba! Burası gezi notlarımı ve fotoğraflarımı paylaştığım yer." /></label>
             )}
-          </div>
-        ))}
-        <div className="add-row">
-          <span className="small muted">Bölüm ekle:</span>
-          {(Object.keys(LABELS) as HomeSection["type"][]).map((t) => (
-            <button type="button" key={t} className="btn small" onClick={() => setSections([...sections, { type: t }])}>+ {LABELS[t]}</button>
+          </section>
+        )}
+      </SortableList>
+      {sections.length === 0 && <div className="empty-state"><span className="emoji">🧭</span>Ana sayfan şu an boş. Aşağıdan bölüm ekle.</div>}
+
+      <div className="panel stack">
+        <h2>Bölüm ekle</h2>
+        <div className="palette">
+          {(Object.keys(INFO) as HomeSection["type"][]).map((t) => (
+            <button type="button" key={t} className="palette-item" onClick={() => setSections((l) => [...l, { id: newId(), type: t }])}>
+              <span className="emoji" aria-hidden>{INFO[t].emoji}</span>
+              <strong>{INFO[t].label}</strong>
+              <span className="hint">{INFO[t].hint}</span>
+            </button>
           ))}
         </div>
       </div>

@@ -28,6 +28,7 @@ export type PostSummary = {
   cover_url: string | null;
   status: "draft" | "published";
   published_at: string | null;
+  updated_at: string;
   location_details: Location[];
 };
 

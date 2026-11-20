@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminFetch, ApiError, useApi } from "@/lib/admin-api";
+import { ToastProvider } from "./Toast";
 
 const NAV = [
-  { href: "/admin", label: "Yazılar" },
-  { href: "/admin/galleries", label: "Galeriler" },
-  { href: "/admin/locations", label: "Konumlar" },
-  { href: "/admin/home", label: "Ana sayfa" },
+  { href: "/admin", label: "Ana pano", emoji: "🏠" },
+  { href: "/admin/galleries", label: "Fotoğraf sergileri", emoji: "🎞️" },
+  { href: "/admin/locations", label: "Konumlar", emoji: "📍" },
+  { href: "/admin/home", label: "Ana sayfa düzeni", emoji: "🧭" },
 ];
 
 export function AdminGate({ children }: { children: React.ReactNode }) {
@@ -34,7 +35,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
   return (
     <div className="admin">
       <aside className="admin-side">
-        <strong>Yönetim</strong>
+        <strong>✦ Blog yönetimi</strong>
         <nav>
           {NAV.map((n) => (
             <Link
@@ -42,16 +43,16 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
               href={n.href}
               className={n.href === "/admin" ? (pathname === "/admin" || pathname.startsWith("/admin/posts") ? "active" : "") : pathname.startsWith(n.href) ? "active" : ""}
             >
-              {n.label}
+              <span aria-hidden>{n.emoji}</span> {n.label}
             </Link>
           ))}
         </nav>
         <div className="admin-side-foot">
-          <Link href="/" target="_blank">Siteyi gör ↗</Link>
-          <button onClick={logout}>Çıkış ({me.username})</button>
+          <Link href="/" target="_blank">🌐 Sitemi aç ↗</Link>
+          <button onClick={logout}>Çıkış yap ({me.username})</button>
         </div>
       </aside>
-      <div className="admin-main">{children}</div>
+      <div className="admin-main"><ToastProvider>{children}</ToastProvider></div>
     </div>
   );
 }

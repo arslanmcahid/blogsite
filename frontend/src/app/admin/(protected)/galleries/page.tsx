@@ -9,26 +9,34 @@ export default function GalleriesAdminPage() {
   return (
     <div>
       <div className="toolbar">
-        <h1>Galeriler</h1>
+        <h1>Fotoğraf sergileri</h1>
         <span className="spacer" />
-        <Link className="btn primary" href="/admin/galleries/new">+ Yeni galeri</Link>
+        <Link className="btn primary" href="/admin/galleries/new">＋ Yeni sergi</Link>
       </div>
       {loading && <p className="muted">Yükleniyor…</p>}
       {error && <p className="admin-error">{error.message}</p>}
-      {data && data.length === 0 && <p className="muted">Henüz galeri yok.</p>}
+      {data && data.length === 0 && (
+        <div className="empty-state">
+          <span className="emoji">🎞️</span>
+          <p>Henüz bir fotoğraf sergin yok. Fotoğraflarını bir araya getirip sergileyebilirsin.</p>
+          <Link className="btn primary" href="/admin/galleries/new">İlk sergini aç</Link>
+        </div>
+      )}
       {data && data.length > 0 && (
-        <table className="table">
-          <thead><tr><th>Başlık</th><th>Durum</th><th>Konum</th></tr></thead>
-          <tbody>
-            {data.map((g) => (
-              <tr key={g.id}>
-                <td><Link href={`/admin/galleries/${encodeURIComponent(g.slug)}`}>{g.title}</Link></td>
-                <td><span className={`badge ${g.is_published ? "published" : "draft"}`}>{g.is_published ? "Yayında" : "Taslak"}</span></td>
-                <td className="muted">{g.location_detail?.name ?? "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="post-list">
+          {data.map((g) => (
+            <li key={g.id}>
+              {g.cover_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="thumb-sm" src={g.cover_url} alt="" />
+              ) : <span className="thumb-sm" aria-hidden />}
+              <Link className="title" href={`/admin/galleries/${encodeURIComponent(g.slug)}`}>{g.title}</Link>
+              <span className={`badge ${g.is_published ? "published" : "draft"}`}>{g.is_published ? "Yayında" : "Taslak"}</span>
+              <span className="muted small">{g.location_detail ? `📍 ${g.location_detail.name}` : ""}</span>
+              <Link className="btn small" href={`/admin/galleries/${encodeURIComponent(g.slug)}`}>Düzenle</Link>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
