@@ -19,6 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 import type { HTMLAttributes, ReactNode, Ref } from "react";
 
 /**
@@ -101,7 +102,7 @@ export function DragHandle({ handle, label = "Sürükleyerek sırala" }: { handl
   const { ref, ...rest } = handle;
   return (
     <button type="button" ref={ref} className="drag-handle" aria-label={label} title={label} {...rest}>
-      ⠿
+      <GripVertical size={16} aria-hidden />
     </button>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { adminFetch, errorMessage } from "@/lib/admin-api";
@@ -28,8 +29,8 @@ export default function LoginPage() {
 
   return (
     <main className="login">
-      <form onSubmit={onSubmit} className="panel">
-        <h1>Yönetim girişi</h1>
+      <form onSubmit={onSubmit}>
+        <div className="brand"><MapPin size={20} aria-hidden /> Yönetim paneli</div>
         <label>Kullanıcı adı<input name="username" autoComplete="username" required autoFocus /></label>
         <label>Parola<input name="password" type="password" autoComplete="current-password" required /></label>
         {error && <p className="admin-error" role="alert">{error}</p>}

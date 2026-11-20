@@ -1,8 +1,9 @@
 "use client";
 
+import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { adminFetch, errorMessage, uploadImage, useApi } from "@/lib/admin-api";
 import { newId } from "@/lib/editor-model";
 import type { Gallery, Location } from "@/lib/types";
@@ -48,6 +49,7 @@ function GalleryForm({ gallery, locations }: { gallery: Gallery | null; location
   }, [dirty]);
 
   async function save() {
+    if (busy) return;
     if (!title.trim()) return toast.error("Önce sergiye bir ad ver.");
     setBusy(true);
     try {
@@ -66,6 +68,22 @@ function GalleryForm({ gallery, locations }: { gallery: Gallery | null; location
       setBusy(false);
     }
   }
+
+  // Ctrl/Cmd + S
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        saveRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   async function remove() {
     if (!slug || !confirm("Bu sergi silinsin mi? Fotoğraflar kütüphanende kalır.")) return;
@@ -92,65 +110,80 @@ function GalleryForm({ gallery, locations }: { gallery: Gallery | null; location
   }
 
   return (
-    <div className="editor">
-      <div className="toolbar">
-        <Link href="/admin/galleries" className="back muted">← Sergiler</Link>
-        <h1>{slug ? "Sergiyi düzenle" : "Yeni fotoğraf sergisi"}</h1>
+    <div>
+      <div className="form-head">
+        <Link href="/admin/galleries" className="back"><ArrowLeft size={16} aria-hidden /> Sergiler</Link>
+        <span className="state" aria-live="polite">{busy ? "Kaydediliyor…" : dirty ? "Kaydedilmemiş değişiklikler var" : slug ? "Tüm değişiklikler kaydedildi" : ""}</span>
         <span className="spacer" />
-        <span className="save-state">{busy ? "Kaydediliyor…" : dirty ? "Kaydedilmemiş değişiklikler var" : slug ? "✓ Kaydedildi" : ""}</span>
-        {slug && published && <Link className="btn" href={`/galeri/${encodeURIComponent(slug)}`} target="_blank">Sitede gör ↗</Link>}
-        <button className="btn primary" onClick={save} disabled={busy || !dirty && !!slug}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
+        <button className="btn primary" onClick={save} disabled={busy}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
       </div>
 
-      <div className="panel stack">
-        <label>Sergi adı<input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. Kapadokya'da bir sabah" /></label>
-        <label>Kısa tanıtım <span className="muted">(isteğe bağlı)</span><textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></label>
-        <div className="grid2">
-          <label>Çekildiği yer
-            <select value={location ?? ""} onChange={(e) => setLocation(e.target.value ? Number(e.target.value) : null)}>
-              <option value="">— belirtme —</option>
-              {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-          </label>
-          <label className="check"><input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} /> Ziyaretçiler görebilsin (yayınla)</label>
-        </div>
-      </div>
+      <div className="form-grid">
+        <div className="form-main">
+          <div className="card stack">
+            <label>Sergi adı *<input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. Kapadokya'da bir sabah" /></label>
+            <label>Kısa tanıtım <span className="muted">(isteğe bağlı)</span><textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></label>
+          </div>
 
-      <div className="panel stack">
-        <h2>Fotoğraflar ({items.length})</h2>
-        <DropZone onFiles={addFiles} hint="Fotoğrafları bırak, sergiye eklensin">
-          <div className="stack">
-            {items.length === 0 && <div className="empty-state"><span className="emoji">📷</span>Fotoğrafları buraya sürükleyip bırak ya da aşağıdan seç.</div>}
-            {items.length > 0 && <p className="muted small">Sırayı değiştirmek için ⠿ simgesinden tutup sürükle. Sergide bu sırayla görünürler.</p>}
-            <SortableList items={items} onChange={setItems} layout="grid" className="gal-items">
-              {(it, i, handle, dragging) => (
-                <div className={`gal-item ${dragging ? "dragging" : ""}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={it.url} alt="" />
-                  <input value={it.caption} aria-label={`${i + 1}. fotoğrafın alt yazısı`} placeholder="Alt yazı" onChange={(e) => setItems(items.map((x) => (x.id === it.id ? { ...x, caption: e.target.value } : x)))} />
-                  <div className="row">
-                    <DragHandle handle={handle} label="Sürükleyerek sırala" />
-                    <span className="spacer" />
-                    <button type="button" className="icon danger" aria-label="Sergiden çıkar" title="Sergiden çıkar" onClick={() => setItems(items.filter((x) => x.id !== it.id))}>🗑</button>
-                  </div>
-                </div>
-              )}
-            </SortableList>
+          <div className="card stack">
             <div className="row">
-              <ImagePicker multiple label="＋ Fotoğraf ekle" onPick={(img) => setItems((cur) => [...cur, { id: newId(), image: img.id, url: img.url, caption: img.alt }])} />
-              {uploading && <span className="muted small">Yükleniyor…</span>}
+              <h2>Fotoğraflar ({items.length})</h2>
+              <span className="spacer" />
+              <ImagePicker multiple label="Fotoğraf ekle" onPick={(img) => setItems((cur) => [...cur, { id: newId(), image: img.id, url: img.url, caption: img.alt }])} />
+            </div>
+            <DropZone onFiles={addFiles} hint="Fotoğrafları bırak, sergiye eklensin">
+              <div className="stack">
+                {items.length === 0 && <div className="empty-slot">Fotoğrafları buraya sürükleyip bırak ya da “Fotoğraf ekle”yi kullan.</div>}
+                {items.length > 0 && <p className="muted small" style={{ margin: 0 }}>Sırayı değiştirmek için tutacaktan sürükle. Sergide bu sırayla görünürler.</p>}
+                <SortableList items={items} onChange={setItems} layout="grid" className="gal-items">
+                  {(it, i, handle, dragging) => (
+                    <div className={`gal-item ${dragging ? "dragging" : ""}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={it.url} alt="" />
+                      <input value={it.caption} aria-label={`${i + 1}. fotoğrafın alt yazısı`} placeholder="Alt yazı" onChange={(e) => setItems(items.map((x) => (x.id === it.id ? { ...x, caption: e.target.value } : x)))} />
+                      <div className="row">
+                        <DragHandle handle={handle} label="Sürükleyerek sırala" />
+                        <span className="spacer" />
+                        <button type="button" className="icon danger" aria-label="Sergiden çıkar" title="Sergiden çıkar" onClick={() => setItems(items.filter((x) => x.id !== it.id))}><Trash2 size={15} /></button>
+                      </div>
+                    </div>
+                  )}
+                </SortableList>
+                {uploading && <span className="muted small">Yükleniyor…</span>}
+              </div>
+            </DropZone>
+          </div>
+        </div>
+
+        <aside className="form-side">
+          <div className="card stack">
+            <h2>Yayın</h2>
+            <label>Durum
+              <select value={published ? "published" : "draft"} onChange={(e) => setPublished(e.target.value === "published")}>
+                <option value="draft">Taslak (sadece sen görürsün)</option>
+                <option value="published">Yayında (ziyaretçiler görür)</option>
+              </select>
+            </label>
+            <label>Çekildiği yer
+              <select value={location ?? ""} onChange={(e) => setLocation(e.target.value ? Number(e.target.value) : null)}>
+                <option value="">— belirtme —</option>
+                {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </label>
+            <div className="row">
+              <button className="btn primary" style={{ flex: 1 }} onClick={save} disabled={busy}>Kaydet</button>
+              {slug && gallery?.is_published && <Link className="btn" href={`/galeri/${encodeURIComponent(slug)}`} target="_blank">Sitede gör</Link>}
             </div>
           </div>
-        </DropZone>
+          {slug && (
+            <div className="card stack">
+              <h2>Sergiyi sil</h2>
+              <p className="muted small" style={{ margin: 0 }}>Fotoğraflar kütüphanende kalır, yalnızca sergi kalkar.</p>
+              <div><button className="btn danger" onClick={remove}>Bu sergiyi sil</button></div>
+            </div>
+          )}
+        </aside>
       </div>
-
-      {slug && (
-        <div className="panel stack">
-          <h2>Sergiyi sil</h2>
-          <p className="muted small">Fotoğraflar kütüphanende kalır, yalnızca sergi kalkar.</p>
-          <div><button className="btn danger" onClick={remove}>Bu sergiyi sil</button></div>
-        </div>
-      )}
     </div>
   );
 }

@@ -5,5 +5,5 @@ import "./admin.css";
 export const metadata: Metadata = { title: "Yönetim", robots: { index: false, follow: false } };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <div className="admin-root">{children}</div>;
 }

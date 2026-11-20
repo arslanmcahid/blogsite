@@ -3,73 +3,53 @@
 import Link from "next/link";
 import { useApi } from "@/lib/admin-api";
 import { formatDate } from "@/lib/format";
-import type { GallerySummary, PostSummary } from "@/lib/types";
-
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 5) return "İyi geceler";
-  if (h < 12) return "Günaydın";
-  if (h < 18) return "İyi günler";
-  return "İyi akşamlar";
-}
+import type { GallerySummary, Location, PostSummary } from "@/lib/types";
 
 export default function DashboardPage() {
   const posts = useApi<PostSummary[]>("/api/posts/");
   const galleries = useApi<GallerySummary[]>("/api/galleries/");
-  const published = posts.data?.filter((p) => p.status === "published").length ?? 0;
-  const drafts = posts.data?.filter((p) => p.status === "draft").length ?? 0;
+  const locations = useApi<Location[]>("/api/locations/");
+
+  const published = posts.data?.filter((p) => p.status === "published").length;
+  const drafts = posts.data?.filter((p) => p.status === "draft").length;
+  const recent = [...(posts.data ?? [])].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 6);
+
+  const cards = [
+    { label: "Yayındaki yazı", value: published },
+    { label: "Taslak", value: drafts },
+    { label: "Fotoğraf sergisi", value: galleries.data?.length },
+    { label: "Konum", value: locations.data?.length },
+  ];
 
   return (
     <div>
-      <div className="hello">
-        <h1>{greeting()} 👋</h1>
-        <p>Bugün ne yapmak istersin?</p>
+      <div className="stats">
+        {cards.map((c) => (
+          <div key={c.label} className="stat">
+            <span>{c.label}</span>
+            <strong>{c.value ?? "—"}</strong>
+          </div>
+        ))}
       </div>
 
-      <div className="quick">
-        <Link className="primary" href="/admin/posts/new"><span className="emoji">✍️</span><strong>Yeni yazı yaz</strong><small>Şablonla hızlıca başla</small></Link>
-        <Link href="/admin/galleries/new"><span className="emoji">🎞️</span><strong>Fotoğraf sergisi aç</strong><small>Fotoğrafları sürükle, bırak</small></Link>
-        <Link href="/admin/locations"><span className="emoji">📍</span><strong>Konum ekle</strong><small>Haritaya tıklayarak</small></Link>
-        <Link href="/admin/home"><span className="emoji">🧭</span><strong>Ana sayfayı düzenle</strong><small>Bölümleri sırala</small></Link>
+      <div className="section-head">
+        <h2>Son güncellenen yazılar</h2>
+        <Link href="/admin/posts/new" className="btn primary">Yeni yazı</Link>
       </div>
-
-      {posts.data && (
-        <div className="stats">
-          <div className="stat"><strong>{published}</strong><span>yayında yazı</span></div>
-          <div className="stat"><strong>{drafts}</strong><span>taslak</span></div>
-          <div className="stat"><strong>{galleries.data?.length ?? "–"}</strong><span>fotoğraf sergisi</span></div>
-        </div>
-      )}
-
-      <div className="toolbar">
-        <h2 style={{ margin: 0 }}>Yazıların</h2>
-      </div>
-      {posts.loading && <p className="muted">Yükleniyor…</p>}
       {posts.error && <p className="admin-error">{posts.error.message}</p>}
-      {posts.data && posts.data.length === 0 && (
-        <div className="empty-state">
-          <span className="emoji">🌱</span>
-          <p>Henüz hiç yazın yok. İlk yazını yazmaya ne dersin?</p>
-          <Link className="btn primary" href="/admin/posts/new">İlk yazını yaz</Link>
-        </div>
-      )}
-      {posts.data && posts.data.length > 0 && (
-        <ul className="post-list">
-          {posts.data.map((p) => (
-            <li key={p.id}>
-              {p.cover_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="thumb-sm" src={p.cover_url} alt="" />
-              ) : <span className="thumb-sm" aria-hidden />}
-              <Link className="title" href={`/admin/posts/${encodeURIComponent(p.slug)}`}>{p.title}</Link>
-              <span className={`badge ${p.status}`}>{p.status === "published" ? "Yayında" : "Taslak"}</span>
-              <time>{p.published_at ? formatDate(p.published_at) : "—"}</time>
-              <Link className="btn small" href={`/admin/posts/${encodeURIComponent(p.slug)}`}>Düzenle</Link>
-              {p.status === "published" && <Link className="btn small" href={`/yazilar/${encodeURIComponent(p.slug)}`} target="_blank">Gör ↗</Link>}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="recent">
+        {recent.map((p) => (
+          <Link key={p.id} href={`/admin/posts/${encodeURIComponent(p.slug)}`}>
+            <div>
+              <div className="t">{p.title}</div>
+              <div className="s">{p.published_at ? formatDate(p.published_at) : "Yayın tarihi yok"}</div>
+            </div>
+            <span className={`badge ${p.status}`}>{p.status === "published" ? "Yayında" : "Taslak"}</span>
+          </Link>
+        ))}
+        {posts.data && recent.length === 0 && <p className="muted" style={{ padding: "32px 20px", textAlign: "center", margin: 0 }}>Henüz yazı yok.</p>}
+        {posts.loading && <p className="muted" style={{ padding: 20, margin: 0 }}>Yükleniyor…</p>}
+      </div>
     </div>
   );
 }

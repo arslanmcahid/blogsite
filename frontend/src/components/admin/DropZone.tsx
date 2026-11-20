@@ -40,7 +40,7 @@ export function DropZone({
       }}
     >
       {children}
-      {over && <div className="dropzone-hint">📷 {hint}</div>}
+      {over && <div className="dropzone-hint">{hint}</div>}
     </div>
   );
 }

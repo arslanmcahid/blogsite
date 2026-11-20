@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown, ChevronUp, Columns3, Image as ImageIcon, Images, MapPin, Plus, Quote, Trash2, Type, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { errorMessage, uploadImage } from "@/lib/admin-api";
 import { BLOCK_INFO, makeBlock, type BlockType, type EBlock, type EInner } from "@/lib/editor-model";
@@ -17,15 +18,28 @@ export type EditorContext = {
 
 const ALL_TYPES: BlockType[] = ["text", "image", "quote", "columns", "gallery", "map"];
 
-function Palette({ onPick, nested, compact = false }: { onPick: (t: BlockType) => void; nested: boolean; compact?: boolean }) {
+const ICONS: Record<BlockType, LucideIcon> = {
+  text: Type,
+  image: ImageIcon,
+  quote: Quote,
+  columns: Columns3,
+  gallery: Images,
+  map: MapPin,
+};
+
+function Icon({ type, size = 16, className }: { type: BlockType; size?: number; className?: string }) {
+  const C = ICONS[type];
+  return <C size={size} className={className} aria-hidden />;
+}
+
+function Palette({ onPick, nested }: { onPick: (t: BlockType) => void; nested: boolean }) {
   const types = nested ? ALL_TYPES.filter((t) => t !== "columns") : ALL_TYPES; // sütunun içine sütun konamaz
   return (
-    <div className={`palette ${compact ? "compact" : ""}`}>
+    <div className="palette">
       {types.map((t) => (
         <button type="button" key={t} className="palette-item" onClick={() => onPick(t)} title={BLOCK_INFO[t].hint}>
-          <span className="emoji" aria-hidden>{BLOCK_INFO[t].emoji}</span>
-          <strong>{BLOCK_INFO[t].label}</strong>
-          {!compact && <span className="hint">{BLOCK_INFO[t].hint}</span>}
+          <Icon type={t} size={15} />
+          {BLOCK_INFO[t].label}
         </button>
       ))}
     </div>
@@ -173,12 +187,12 @@ function BlockList({ value, onChange, ctx, nested = false }: { value: EBlock[]; 
   const slot = (index: number) =>
     openAt === index ? (
       <div className="slot-open">
-        <Palette nested={nested} compact onPick={(t) => insertAt(index, t)} />
+        <Palette nested={nested} onPick={(t) => insertAt(index, t)} />
         <button type="button" className="btn small" onClick={() => setOpenAt(null)}>Vazgeç</button>
       </div>
     ) : (
       <button type="button" className="slot" onClick={() => setOpenAt(index)} aria-label="Buraya bölüm ekle" title="Buraya bölüm ekle">
-        <span>＋</span>
+        <span><Plus size={14} /></span>
       </button>
     );
 
@@ -191,12 +205,12 @@ function BlockList({ value, onChange, ctx, nested = false }: { value: EBlock[]; 
             <section className={`block ${dragging ? "dragging" : ""}`} aria-label={BLOCK_INFO[block.type].label}>
               <div className="block-head">
                 <DragHandle handle={handle} label={`${BLOCK_INFO[block.type].label} bölümünü sürükleyerek taşı`} />
-                <span aria-hidden>{BLOCK_INFO[block.type].emoji}</span>
+                <Icon type={block.type} size={16} className="kind" />
                 <strong>{BLOCK_INFO[block.type].label}</strong>
                 <span className="spacer" />
-                <button type="button" className="icon" aria-label="Yukarı taşı" title="Yukarı taşı" disabled={i === 0} onClick={() => move(i, i - 1)}>↑</button>
-                <button type="button" className="icon" aria-label="Aşağı taşı" title="Aşağı taşı" disabled={i === value.length - 1} onClick={() => move(i, i + 1)}>↓</button>
-                <button type="button" className="icon danger" aria-label="Bu bölümü sil" title="Bu bölümü sil" onClick={() => remove(i)}>🗑</button>
+                <button type="button" className="icon" aria-label="Yukarı taşı" title="Yukarı taşı" disabled={i === 0} onClick={() => move(i, i - 1)}><ChevronUp size={16} /></button>
+                <button type="button" className="icon" aria-label="Aşağı taşı" title="Aşağı taşı" disabled={i === value.length - 1} onClick={() => move(i, i + 1)}><ChevronDown size={16} /></button>
+                <button type="button" className="icon danger" aria-label="Bu bölümü sil" title="Bu bölümü sil" onClick={() => remove(i)}><Trash2 size={15} /></button>
               </div>
               {block.type === "columns" ? (
                 <ColumnsFields block={block} ctx={ctx} onChange={(b) => onChange(value.map((x, j) => (j === i ? b : x)))} />
@@ -209,8 +223,8 @@ function BlockList({ value, onChange, ctx, nested = false }: { value: EBlock[]; 
         )}
       </SortableList>
       <div className="add-more">
-        <div className="small muted">{value.length === 0 ? "Başlamak için bir bölüm ekle:" : "Yeni bölüm ekle:"}</div>
-        <Palette nested={nested} onPick={(t) => insertAt(value.length, t)} compact={nested} />
+        <div className="small muted">{value.length === 0 ? "Başlamak için bir bölüm ekle:" : "Bölüm ekle:"}</div>
+        <Palette nested={nested} onPick={(t) => insertAt(value.length, t)} />
       </div>
     </div>
   );

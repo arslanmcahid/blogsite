@@ -54,13 +54,13 @@ export function toApi(blocks: EBlock[]): Block[] {
 
 export type BlockType = EBlock["type"];
 
-export const BLOCK_INFO: Record<BlockType, { label: string; emoji: string; hint: string }> = {
-  text: { label: "Yazı", emoji: "✍️", hint: "Paragraflar, başlıklar, listeler" },
-  image: { label: "Fotoğraf", emoji: "🖼️", hint: "Tek bir fotoğraf ve alt yazısı" },
-  quote: { label: "Alıntı", emoji: "❝", hint: "Öne çıkan bir söz" },
-  columns: { label: "Gazete sütunları", emoji: "📰", hint: "Yan yana 2-4 sütun" },
-  gallery: { label: "Fotoğraf sergisi", emoji: "🎞️", hint: "Hazırladığın bir sergiyi göm" },
-  map: { label: "Harita", emoji: "📍", hint: "Bir konumu haritada göster" },
+export const BLOCK_INFO: Record<BlockType, { label: string; hint: string }> = {
+  text: { label: "Yazı", hint: "Paragraflar, başlıklar, listeler" },
+  image: { label: "Fotoğraf", hint: "Tek bir fotoğraf ve alt yazısı" },
+  quote: { label: "Alıntı", hint: "Öne çıkan bir söz" },
+  columns: { label: "Gazete sütunları", hint: "Yan yana 2-4 sütun" },
+  gallery: { label: "Fotoğraf sergisi", hint: "Hazırladığın bir sergiyi göm" },
+  map: { label: "Harita", hint: "Bir konumu haritada göster" },
 };
 
 export function makeBlock(type: BlockType, defaults: { gallery?: string; location?: number } = {}): EBlock {
@@ -80,7 +80,6 @@ export function makeBlock(type: BlockType, defaults: { gallery?: string; locatio
 export type Template = {
   id: string;
   title: string;
-  emoji: string;
   description: string;
   theme: PostTheme;
   blocks: Block[];
@@ -90,7 +89,6 @@ export const TEMPLATES: Template[] = [
   {
     id: "article",
     title: "Düz yazı",
-    emoji: "✍️",
     description: "Giriş, gelişme ve sonuç bölümleriyle klasik bir yazı.",
     theme: { font: "serif", width: "normal" },
     blocks: [
@@ -102,7 +100,6 @@ export const TEMPLATES: Template[] = [
   {
     id: "photo-trip",
     title: "Fotoğraflı gezi yazısı",
-    emoji: "🗺️",
     description: "Anlatım, fotoğraflar ve gittiğin yerin haritası.",
     theme: { font: "serif", width: "normal" },
     blocks: [
@@ -116,7 +113,6 @@ export const TEMPLATES: Template[] = [
   {
     id: "newspaper",
     title: "Gazete sayfası",
-    emoji: "📰",
     description: "Geniş sayfada yan yana sütunlar, alıntı ve fotoğraf.",
     theme: { font: "serif", width: "wide" },
     blocks: [
@@ -134,7 +130,6 @@ export const TEMPLATES: Template[] = [
   {
     id: "exhibition",
     title: "Fotoğraf sergisi",
-    emoji: "🎞️",
     description: "Kısa bir tanıtım ve geniş bir fotoğraf sergisi.",
     theme: { font: "sans", width: "wide" },
     blocks: [
@@ -145,7 +140,6 @@ export const TEMPLATES: Template[] = [
   {
     id: "blank",
     title: "Boş sayfa",
-    emoji: "📄",
     description: "Sıfırdan, kendin kur.",
     theme: { font: "serif", width: "normal" },
     blocks: [{ type: "text", markdown: "" }],
