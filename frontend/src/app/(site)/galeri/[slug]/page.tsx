@@ -3,16 +3,17 @@ import { Suspense } from "react";
 import { GalleryGrid } from "@/components/GalleryGrid";
 import { MapView } from "@/components/MapView";
 import { getGallery } from "@/lib/api";
+import { decodeSlug } from "@/lib/slug";
 
 export async function generateMetadata({ params }: PageProps<"/galeri/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const g = await getGallery(slug);
+  const g = await getGallery(decodeSlug(slug));
   return { title: g.title, description: g.description || undefined };
 }
 
 async function GalleryContent({ params }: { params: PageProps<"/galeri/[slug]">["params"] }) {
   const { slug } = await params;
-  const g = await getGallery(slug);
+  const g = await getGallery(decodeSlug(slug));
   return (
     <>
       <h1>{g.title}</h1>

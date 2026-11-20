@@ -4,10 +4,11 @@ import { BlockRenderer } from "@/components/BlockRenderer";
 import { MapView } from "@/components/MapView";
 import { getPost } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { decodeSlug } from "@/lib/slug";
 
 export async function generateMetadata({ params }: PageProps<"/yazilar/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPost(slug);
+  const post = await getPost(decodeSlug(slug));
   return {
     title: post.title,
     description: post.excerpt || undefined,
@@ -55,5 +56,5 @@ export default function PostPage({ params }: PageProps<"/yazilar/[slug]">) {
 
 async function PostRoute({ params }: { params: PageProps<"/yazilar/[slug]">["params"] }) {
   const { slug } = await params;
-  return <PostContent slug={slug} />;
+  return <PostContent slug={decodeSlug(slug)} />;
 }

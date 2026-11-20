@@ -24,6 +24,7 @@ export type PostSummary = {
   slug: string;
   title: string;
   excerpt: string;
+  cover: number | null;
   cover_url: string | null;
   status: "draft" | "published";
   published_at: string | null;
@@ -41,6 +42,7 @@ export type Post = PostSummary & { blocks: Block[]; theme: PostTheme };
 
 export type GalleryItem = {
   id: number;
+  image: number;
   url: string;
   width: number | null;
   height: number | null;
@@ -53,7 +55,9 @@ export type GallerySummary = {
   title: string;
   description: string;
   cover_url: string | null;
+  location: number | null;
   location_detail: Location | null;
+  is_published: boolean;
 };
 
 export type Gallery = GallerySummary & { items: GalleryItem[] };
@@ -66,3 +70,12 @@ export type HomeSection = {
 };
 
 export type HomeLayout = { sections: HomeSection[] };
+
+// --- Admin tarafı ---
+export type AdminImage = {
+  id: number;
+  url: string;
+  alt: string;
+  width: number | null;
+  height: number | null;
+};

@@ -1,8 +1,10 @@
 """Geliştirme için örnek içerik üretir: python manage.py seed_demo"""
 
 import io
+import os
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from PIL import Image as PILImage, ImageDraw
@@ -24,9 +26,20 @@ def make_image(color: tuple[int, int, int], size=(1200, 800), label="") -> Conte
 class Command(BaseCommand):
     help = "Örnek yazı, galeri ve konumlar oluşturur (sadece DEBUG=1)."
 
+    def _ensure_dev_admin(self):
+        """Yerel geliştirme için admin kullanıcısı (parola: DEV_ADMIN_PASSWORD, bkz. .env.example)."""
+        User = get_user_model()
+        password = os.environ.get("DEV_ADMIN_PASSWORD", "dev-admin-pass")
+        user, created = User.objects.get_or_create(username="admin", defaults={"is_staff": True, "is_superuser": True})
+        if created:
+            user.set_password(password)
+            user.save()
+            self.stdout.write("Geliştirme admin kullanıcısı oluşturuldu: admin")
+
     def handle(self, *args, **opts):
         if not settings.DEBUG:
             raise CommandError("seed_demo sadece geliştirme ortamında çalışır.")
+        self._ensure_dev_admin()
         if Post.objects.exists():
             self.stdout.write("Zaten içerik var, atlandı.")
             return
