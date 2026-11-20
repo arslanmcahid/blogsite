@@ -1,3 +1,26 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Gallery, GalleryItem, HomeLayout, Image, Location, Post
+
+
+class GalleryItemInline(admin.TabularInline):
+    model = GalleryItem
+    extra = 0
+
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ("title", "status", "published_at")
+    list_filter = ("status",)
+    search_fields = ("title",)
+
+
+@admin.register(Gallery)
+class GalleryAdmin(admin.ModelAdmin):
+    list_display = ("title", "is_published")
+    inlines = [GalleryItemInline]
+
+
+admin.site.register(Image)
+admin.site.register(Location)
+admin.site.register(HomeLayout)
