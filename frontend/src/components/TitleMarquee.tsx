@@ -2,11 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { HOME_TITLE } from "@/lib/site";
+import { HOME_TITLE, MARQUEE_TEXT } from "@/lib/site";
 
 // Boşluklar bölünmeyen boşluktur (NBSP): tarayıcı sıradan boşlukları sekme başlığında tek boşluğa indirir.
 const SEPARATOR = "   •   ";
-const STEP_MS = 100; // bir harf kayma süresi (saniyede 10 harf)
+const STEP_MS = 60; // bir harf kayma süresi (saniyede ~16 harf); büyütürsen yavaşlar, küçültürsen hızlanır
 const HOLD_MS = 4000; // tam başlık her turdan sonra bu kadar sabit durur
 
 /**
@@ -25,7 +25,7 @@ export function TitleMarquee() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (/bot|crawl|spider|slurp|headless|lighthouse|preview/i.test(navigator.userAgent)) return;
 
-    const text = HOME_TITLE + SEPARATOR;
+    const text = MARQUEE_TEXT + SEPARATOR;
     let timer: ReturnType<typeof setTimeout>;
 
     const hold = () => {
