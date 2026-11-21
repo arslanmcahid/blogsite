@@ -59,7 +59,7 @@ function Item({ block, locations }: { block: InnerBlock; locations: Location[] }
     case "video":
       return <VideoEmbed url={block.url} />;
     case "ad":
-      return <p className="ad-ph">Reklam alanı (yayındaki reklam burada görünür)</p>;
+      return <p className="ad-ph">Reklam alanı (reklam burada görünür)</p>;
     case "map":
       return <PreviewMap id={block.location} locations={locations} />;
   }

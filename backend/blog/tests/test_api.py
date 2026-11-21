@@ -303,3 +303,22 @@ def test_ad_section_and_block_are_valid(admin_client):
     assert admin_client.put("/api/home/", {"sections": [{"type": "ad"}]}, format="json").status_code == 200
     r = admin_client.post("/api/posts/", {"title": "R", "blocks": [{"type": "ad"}]}, format="json")
     assert r.status_code == 201
+
+
+def test_weighted_pick_and_pinned_ad(admin_client, anon):
+    heavy = make_ad(admin_client, name="Ağır", weight=9, placements=["home"])
+    light = make_ad(admin_client, name="Hafif", weight=1, placements=["home"])
+    other = make_ad(admin_client, name="Başka yer", placements=["post_end"])
+    assert admin_client.post("/api/ads/", {"name": "x", "kind": "text", "title": "t", "link_url": "https://x.com", "weight": 0}, format="json").status_code == 400
+    assert admin_client.post("/api/ads/", {"name": "x", "kind": "text", "title": "t", "link_url": "https://x.com", "weight": 11}, format="json").status_code == 400
+    counts = {heavy["id"]: 0, light["id"]: 0}
+    for _ in range(300):
+        counts[anon.get("/api/sponsor/pick/?placement=home").json()["ad"]["id"]] += 1
+    assert counts[heavy["id"]] > counts[light["id"]] * 3  # 9:1 oranına yakın
+    # sabitlenen reklam, yerleşim listesinde olmasa da gösterilir
+    assert anon.get(f"/api/sponsor/pick/?placement=post_inline&pin={other['id']}").json()["ad"]["id"] == other["id"]
+    # sabitlenen reklam kapalıysa rastgeleye düşer (boş kalmaz)
+    admin_client.patch(f"/api/ads/{other['id']}/", {"is_active": False}, format="json")
+    assert anon.get(f"/api/sponsor/pick/?placement=home&pin={other['id']}").json()["ad"]["id"] in (heavy["id"], light["id"])
+    assert admin_client.post("/api/posts/", {"title": "P", "blocks": [{"type": "ad", "ad": heavy["id"]}]}, format="json").status_code == 201
+    assert admin_client.post("/api/posts/", {"title": "P2", "blocks": [{"type": "ad", "ad": "x"}]}, format="json").status_code == 400

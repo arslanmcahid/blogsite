@@ -20,22 +20,23 @@ type Draft = {
   cta: string;
   link_url: string;
   placements: AdPlacement[];
+  weight: number;
   is_active: boolean;
   starts_on: string;
   ends_on: string;
 };
 
-const blank: Draft = { name: "", kind: "banner", image: null, title: "", body: "", cta: "", link_url: "", placements: ["home", "post_end"], is_active: true, starts_on: "", ends_on: "" };
+const blank: Draft = { name: "", kind: "banner", image: null, title: "", body: "", cta: "", link_url: "", placements: ["home", "post_end"], weight: 1, is_active: true, starts_on: "", ends_on: "" };
 
 const fromAd = (a: Ad): Draft => ({
   name: a.name, kind: a.kind, image: a.image && a.image_url ? { id: a.image, url: a.image_url, w: null, h: null } : null,
-  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements, is_active: a.is_active,
+  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements, weight: a.weight, is_active: a.is_active,
   starts_on: a.starts_on ?? "", ends_on: a.ends_on ?? "",
 });
 
 const payload = (d: Draft) => ({
   name: d.name.trim(), kind: d.kind, image: d.image?.id ?? null, title: d.title.trim(), body: d.body.trim(), cta: d.cta.trim(),
-  link_url: d.link_url.trim(), placements: d.placements, is_active: d.is_active,
+  link_url: d.link_url.trim(), placements: d.placements, weight: d.weight, is_active: d.is_active,
   starts_on: d.starts_on || null, ends_on: d.ends_on || null,
 });
 
@@ -291,7 +292,12 @@ function AdForm({ ad }: { ad: Ad | null }) {
                 </label>
               ))}
             </div>
-            <p className="muted small" style={{ margin: 0 }}>Aynı yere birden çok reklam atarsan sırayla gösterilirler.</p>
+            <label>Gösterilme ağırlığı
+              <select value={draft.weight} onChange={(e) => update({ weight: Number(e.target.value) })}>
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}{n === 1 ? " (normal)" : n >= 5 ? " (çok sık)" : ""}</option>)}
+              </select>
+            </label>
+            <p className="muted small" style={{ margin: 0 }}>Aynı yere birden çok reklam atarsan ağırlığa göre dönerler: hepsi 1 ise eşit, birinin ağırlığı 3 ise diğerlerinden yaklaşık 3 kat sık çıkar.</p>
           </div>
 
           <div className="card stack">

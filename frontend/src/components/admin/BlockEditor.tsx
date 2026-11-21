@@ -16,6 +16,7 @@ import { useToast } from "./Toast";
 export type EditorContext = {
   galleries: { slug: string; title: string }[];
   locations: Location[];
+  ads: { id: number; name: string }[];
 };
 
 const ALL_TYPES: BlockType[] = ["text", "image", "quote", "video", "ad", "columns", "gallery", "map"];
@@ -115,7 +116,18 @@ function BlockFields({ block, onChange, ctx }: { block: EInner; onChange: (b: EI
         </label>
       );
     case "ad":
-      return <p className="muted small" style={{ margin: 0 }}>Burada yayındaki bir reklam gösterilir. Hangi reklamın çıkacağını <a href="/admin/ads" target="_blank">Reklamlar</a> sayfasında “Yazı içi” alanını seçerek belirlersin. Reklam yoksa bu bölüm sitede görünmez.</p>;
+      return (
+        <div className="stack">
+          <label>Hangi reklam gösterilsin?
+            <select value={block.ad ?? ""} onChange={(e) => onChange({ ...block, ad: e.target.value ? Number(e.target.value) : undefined })}>
+              <option value="">Rastgele (reklamların ağırlığına göre)</option>
+              {block.ad && !ctx.ads.some((a) => a.id === block.ad) ? <option value={block.ad}>(silinmiş reklam)</option> : null}
+              {ctx.ads.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </label>
+          <p className="muted small" style={{ margin: 0 }}>Belirli bir reklam seçersen bu yazıda hep o çıkar (süresi dolana ya da duraklatılana kadar; o zaman rastgele biri gösterilir). Rastgele seçersen “Yazı içi” alanını işaretlemiş reklamlardan, ağırlıklarına göre biri çıkar. <a href="/admin/ads" target="_blank">Reklamlar</a></p>
+        </div>
+      );
     case "video": {
       const bad = block.url.trim() !== "" && !youtubeId(block.url);
       return (

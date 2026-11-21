@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { adminFetch, errorMessage, useApi } from "@/lib/admin-api";
 import { type EBlock, TEMPLATES, toApi, toEditor } from "@/lib/editor-model";
-import type { AdminImage, Category, GallerySummary, InfoRow, Location, Post, PostSummary, PostTheme, Source, Tag } from "@/lib/types";
+import type { Ad, AdminImage, Category, GallerySummary, InfoRow, Location, Post, PostSummary, PostTheme, Source, Tag } from "@/lib/types";
 import { BlockEditor } from "./BlockEditor";
 import { ImagePicker } from "./ImagePicker";
 import { CategoryCard, InfoCard, RelatedCard, SourcesCard, TagsCard } from "./PostExtras";
@@ -82,13 +82,14 @@ function payloadOf(d: Draft) {
 
 const snapshotOf = (d: Draft) => JSON.stringify(payloadOf(d));
 
-function PostForm({ post, locations, galleries, allPosts, initialCategories, initialTags }: {
+function PostForm({ post, locations, galleries, allPosts, initialCategories, initialTags, ads }: {
   post: Post | null;
   locations: Location[];
   galleries: GallerySummary[];
   allPosts: PostSummary[];
   initialCategories: Category[];
   initialTags: Tag[];
+  ads: { id: number; name: string }[];
 }) {
   const [categories, setCategories] = useState(initialCategories);
   const [tags, setTags] = useState(initialTags);
@@ -180,7 +181,7 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
   const deferred = useDeferredValue(draft);
   const previewBlocks = useMemo(() => toApi(deferred.blocks), [deferred.blocks]);
   const previewLocations = useMemo(() => locations.filter((l) => deferred.locIds.includes(l.id)), [locations, deferred.locIds]);
-  const ctx = useMemo(() => ({ galleries: galleries.map((g) => ({ slug: g.slug, title: g.title })), locations }), [galleries, locations]);
+  const ctx = useMemo(() => ({ galleries: galleries.map((g) => ({ slug: g.slug, title: g.title })), locations, ads }), [galleries, locations, ads]);
 
   const emptyNewPost = !slug && draft.blocks.length === 0;
 
@@ -332,10 +333,11 @@ export function PostEditor({ slug }: { slug?: string }) {
   const all = useApi<PostSummary[]>("/api/posts/");
   const cats = useApi<Category[]>("/api/categories/");
   const tgs = useApi<Tag[]>("/api/tags/");
+  const adList = useApi<Ad[]>("/api/ads/");
 
-  const error = post.error ?? locs.error ?? gals.error ?? all.error ?? cats.error ?? tgs.error;
+  const error = post.error ?? locs.error ?? gals.error ?? all.error ?? cats.error ?? tgs.error ?? adList.error;
   if (error) return <p className="admin-error">{error.message}</p>;
-  if ((slug && !post.data) || !locs.data || !gals.data || !all.data || !cats.data || !tgs.data) return <p className="muted">Yükleniyor…</p>;
+  if ((slug && !post.data) || !locs.data || !gals.data || !all.data || !cats.data || !tgs.data || !adList.data) return <p className="muted">Yükleniyor…</p>;
   // key: farklı yazıya geçildiğinde form durumu sıfırlansın
-  return <PostForm key={slug ?? "new"} post={post.data ?? null} locations={locs.data} galleries={gals.data} allPosts={all.data} initialCategories={cats.data} initialTags={tgs.data} />;
+  return <PostForm key={slug ?? "new"} post={post.data ?? null} locations={locs.data} galleries={gals.data} allPosts={all.data} initialCategories={cats.data} initialTags={tgs.data} ads={adList.data.map((a) => ({ id: a.id, name: a.name }))} />;
 }

@@ -7,7 +7,7 @@ export type InnerBlock =
   | { type: "quote"; text: string; author?: string }
   | { type: "gallery"; gallery: string }
   | { type: "video"; url: string }
-  | { type: "ad" }
+  | { type: "ad"; ad?: number }
   | { type: "map"; location: number };
 
 export type Block =
@@ -133,6 +133,7 @@ export type Ad = {
   cta: string;
   link_url: string;
   placements: AdPlacement[];
+  weight: number;
   is_active: boolean;
   starts_on: string | null;
   ends_on: string | null;

@@ -61,7 +61,9 @@ def _validate_block(block, where: str, *, nested: bool) -> None:
         if not YOUTUBE_RE.match(block["url"].strip()):
             raise ValidationError(f"{where}: video adresi bir YouTube bağlantısı olmalı.")
     elif kind == "ad":
-        pass  # reklam yeri: içeriği reklam yönetiminden gelir
+        # İsteğe bağlı "ad": belirli bir reklamın id'si; yoksa ağırlığa göre rastgele.
+        if block.get("ad") is not None and not isinstance(block.get("ad"), int):
+            raise ValidationError(f"{where}: 'ad' bir reklam id'si (sayı) olmalı.")
     elif kind == "map":
         if not isinstance(block.get("location"), int):
             raise ValidationError(f"{where}: 'location' bir konum id'si (sayı) olmalı.")

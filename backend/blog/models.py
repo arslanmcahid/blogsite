@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
@@ -214,6 +215,8 @@ class Ad(models.Model):
     cta = models.CharField("Düğme yazısı", max_length=40, blank=True)
     link_url = models.URLField(max_length=500)
     placements = models.JSONField(default=list, blank=True, validators=[validate_placements])
+    # Gösterilme ağırlığı: 3 olan reklam, 1 olandan ortalama 3 kat sık gösterilir.
+    weight = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(10)])
     is_active = models.BooleanField(default=True)
     starts_on = models.DateField(null=True, blank=True)
     ends_on = models.DateField(null=True, blank=True)  # bu gün dahil

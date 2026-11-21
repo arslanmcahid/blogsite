@@ -218,6 +218,7 @@ class AdViewSet(viewsets.ModelViewSet):
 def sponsor_pick(request):
     """Bir yer için o an yayında olan reklamlardan birini (rastgele dönüşümlü) verir."""
     placement = request.query_params.get("placement", "")
+    pin = request.query_params.get("pin", "")
     exclude = [int(x) for x in request.query_params.get("exclude", "").split(",") if x.isdigit()]
     today = timezone.localdate()
     candidates = (
@@ -227,10 +228,14 @@ def sponsor_pick(request):
         .filter(Q(ends_on__isnull=True) | Q(ends_on__gte=today))
         .exclude(id__in=exclude)
     )
+    # Yazıya sabitlenmiş reklam: yayında olduğu sürece (yerleşim listesine bakılmaksızın) o gösterilir.
+    if pin.isdigit() and (pinned := candidates.filter(pk=int(pin)).first()):
+        return Response({"ad": PublicAdSerializer(pinned).data})
     ads = [a for a in candidates if placement in a.placements]
     if not ads:
         return Response({"ad": None})
-    return Response({"ad": PublicAdSerializer(random.choice(ads)).data})
+    # Ağırlıklı rastgele: ağırlığı 3 olan, 1 olandan ortalama 3 kat sık seçilir (hepsi 1 ise eşit dönüş).
+    return Response({"ad": PublicAdSerializer(random.choices(ads, weights=[a.weight for a in ads])[0]).data})
 
 
 @csrf_exempt

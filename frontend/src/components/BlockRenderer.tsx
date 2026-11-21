@@ -39,7 +39,7 @@ async function BlockItem({ block }: { block: InnerBlock }) {
     case "video":
       return <VideoEmbed url={block.url} />;
     case "ad":
-      return <AdSlot placement="post_inline" />;
+      return <AdSlot placement="post_inline" pin={block.ad} />;
     case "map": {
       const locations = (await getLocations()).filter((l) => l.id === block.location);
       return <MapView locations={locations} />;
