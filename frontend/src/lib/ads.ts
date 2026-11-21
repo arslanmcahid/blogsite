@@ -8,12 +8,14 @@ export const ctr = (views: number | null, clicks: number | null) => (views ? `%$
 
 
 /** Yerleşime uygun biçim adayları (sistem, görselin oranına en yakın olanı seçer). */
-const CANDIDATES: Record<"side" | "content", AdFormat[]> = {
+const CANDIDATES: Record<"side" | "content" | "bar", AdFormat[]> = {
   side: ["tall", "rect"],
   content: ["leaderboard", "billboard", "rect"],
+  bar: ["leaderboard"],
 };
 
-export const isSide = (p: AdPlacement) => p === "side_left" || p === "side_right";
+export const isSide = (p: AdPlacement) => p === "home_left" || p === "home_right" || p === "post_left" || p === "post_right";
+const groupOf = (p: AdPlacement) => (isSide(p) ? "side" : p === "bottom_bar" ? "bar" : "content");
 
 /**
  * "Otomatik" biçim: görselin kendi oranına en yakın uygun biçim, böylece en az kırpılır.
@@ -24,7 +26,7 @@ export function autoFormat(placement: AdPlacement, w: number | null, h: number |
   const img = Math.log(w / h);
   let best: AdFormat = "auto";
   let bestD = Infinity;
-  for (const id of CANDIDATES[isSide(placement) ? "side" : "content"]) {
+  for (const id of CANDIDATES[groupOf(placement)]) {
     const f = AD_FORMATS.find((x) => x.id === id)!;
     const d = Math.abs(img - Math.log(f.w / f.h));
     if (d < bestD) {

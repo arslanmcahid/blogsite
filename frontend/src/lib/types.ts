@@ -7,7 +7,6 @@ export type InnerBlock =
   | { type: "quote"; text: string; author?: string }
   | { type: "gallery"; gallery: string }
   | { type: "video"; url: string }
-  | { type: "ad"; ad?: number }
   | { type: "map"; location: number };
 
 export type Block =
@@ -105,24 +104,26 @@ export type AdminImage = {
 };
 
 // --- Reklamlar ---
-export type AdPlacement = "home" | "post_inline" | "post_end" | "side_left" | "side_right";
+export type AdPlacement = "home" | "home_left" | "home_right" | "post_left" | "post_right" | "post_end" | "bottom_bar";
 export type AdFormat = "auto" | "leaderboard" | "billboard" | "rect" | "tall";
 
 /** Afiş biçimleri: görsel bu orana kırpılır (auto: sistem yere göre seçer). */
 export const AD_FORMATS: { id: AdFormat; label: string; w: number; h: number; hint: string }[] = [
   { id: "auto", label: "Otomatik", w: 0, h: 0, hint: "Sistem yere göre seçer" },
-  { id: "leaderboard", label: "Yatay şerit 728×90", w: 728, h: 90, hint: "Yazı içi ve sonu için" },
+  { id: "leaderboard", label: "Yatay şerit 728×90", w: 728, h: 90, hint: "Yazı sonu ve alt şerit için" },
   { id: "billboard", label: "Geniş yatay 970×250", w: 970, h: 250, hint: "Ana sayfa için" },
   { id: "rect", label: "Dikdörtgen 300×250", w: 300, h: 250, hint: "Her yerde" },
   { id: "tall", label: "Dikey 160×600", w: 160, h: 600, hint: "Yan alanlar için" },
 ];
 
 export const AD_PLACEMENTS: { id: AdPlacement; label: string; hint: string }[] = [
-  { id: "home", label: "Ana sayfa", hint: "Ana sayfanın içinde (düzenden “Reklam” bölümü eklemezsen ilk bölümün altında)" },
-  { id: "post_inline", label: "Yazı içi", hint: "Yazının içinde (yazıya “Reklam” bölümü eklemezsen ortasına otomatik)" },
-  { id: "post_end", label: "Yazı sonu", hint: "Her yazının altında, otomatik" },
-  { id: "side_left", label: "Yan alan (sol)", hint: "Geniş ekranlarda sayfanın sol boşluğunda, tüm sayfalarda" },
-  { id: "side_right", label: "Yan alan (sağ)", hint: "Geniş ekranlarda sayfanın sağ boşluğunda, tüm sayfalarda" },
+  { id: "home_left", label: "Ana sayfa · sol yan", hint: "Geniş ekranlarda ana sayfanın solundaki boşlukta, kaydırırken görünür kalır" },
+  { id: "home_right", label: "Ana sayfa · sağ yan", hint: "Geniş ekranlarda ana sayfanın sağındaki boşlukta" },
+  { id: "post_left", label: "Yazı · sol yan", hint: "Yazı sayfalarında, içeriğin solundaki boşlukta" },
+  { id: "post_right", label: "Yazı · sağ yan", hint: "Yazı sayfalarında, içeriğin sağındaki boşlukta" },
+  { id: "home", label: "Ana sayfa · içerik arası", hint: "Ana sayfanın içinde (düzenden “Reklam” bölümü eklemezsen ilk bölümün altında)" },
+  { id: "post_end", label: "Yazı sonu", hint: "Her yazının altında" },
+  { id: "bottom_bar", label: "Ekran altı (sabit şerit)", hint: "Tüm sayfalarda, ziyaretçi kaydırırken ekranın altında hep görünür (kapatılabilir)" },
 ];
 
 export type PublicAd = {

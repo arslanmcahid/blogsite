@@ -269,7 +269,7 @@ def test_pick_only_running_ads_for_the_placement(admin_client, anon):
     ad = make_ad(admin_client)
     make_ad(admin_client, name="Kapalı", is_active=False)
     make_ad(admin_client, name="Bitmiş", ends_on="2000-01-01")
-    make_ad(admin_client, name="Başka yer", placements=["post_inline"])
+    make_ad(admin_client, name="Başka yer", placements=["post_left"])
     got = anon.get("/api/sponsor/pick/?placement=home").json()["ad"]
     assert got["id"] == ad["id"]
     assert "link_url" not in got  # adres sadece yönlendirmeden bilinir
@@ -301,11 +301,12 @@ def test_views_and_clicks_are_counted_per_day(admin_client, anon):
 
 def test_ad_section_and_block_are_valid(admin_client):
     assert admin_client.put("/api/home/", {"sections": [{"type": "ad"}]}, format="json").status_code == 200
+    # yazı içi reklam bloğu kaldırıldı
     r = admin_client.post("/api/posts/", {"title": "R", "blocks": [{"type": "ad"}]}, format="json")
-    assert r.status_code == 201
+    assert r.status_code == 400
 
 
-def test_weighted_pick_and_pinned_ad(admin_client, anon):
+def test_weighted_pick(admin_client, anon):
     heavy = make_ad(admin_client, name="Ağır", weight=9, placements=["home"])
     light = make_ad(admin_client, name="Hafif", weight=1, placements=["home"])
     other = make_ad(admin_client, name="Başka yer", placements=["post_end"])
@@ -315,20 +316,13 @@ def test_weighted_pick_and_pinned_ad(admin_client, anon):
     for _ in range(300):
         counts[anon.get("/api/sponsor/pick/?placement=home").json()["ad"]["id"]] += 1
     assert counts[heavy["id"]] > counts[light["id"]] * 3  # 9:1 oranına yakın
-    # sabitlenen reklam, yerleşim listesinde olmasa da gösterilir
-    assert anon.get(f"/api/sponsor/pick/?placement=post_inline&pin={other['id']}").json()["ad"]["id"] == other["id"]
-    # sabitlenen reklam kapalıysa rastgeleye düşer (boş kalmaz)
-    admin_client.patch(f"/api/ads/{other['id']}/", {"is_active": False}, format="json")
-    assert anon.get(f"/api/sponsor/pick/?placement=home&pin={other['id']}").json()["ad"]["id"] in (heavy["id"], light["id"])
-    assert admin_client.post("/api/posts/", {"title": "P", "blocks": [{"type": "ad", "ad": heavy["id"]}]}, format="json").status_code == 201
-    assert admin_client.post("/api/posts/", {"title": "P2", "blocks": [{"type": "ad", "ad": "x"}]}, format="json").status_code == 400
 
 
 def test_side_placements_and_banner_format(admin_client, anon):
     img = make_image(admin_client)
-    ok = admin_client.post("/api/ads/", {"name": "Yan", "kind": "banner", "image": img, "link_url": "https://x.com", "placements": ["side_left", "side_right"], "format": "tall", "focus_x": 20, "focus_y": 80}, format="json")
+    ok = admin_client.post("/api/ads/", {"name": "Yan", "kind": "banner", "image": img, "link_url": "https://x.com", "placements": ["home_left", "post_right"], "format": "tall", "focus_x": 20, "focus_y": 80}, format="json")
     assert ok.status_code == 201, ok.content
-    got = anon.get("/api/sponsor/pick/?placement=side_left").json()["ad"]
+    got = anon.get("/api/sponsor/pick/?placement=home_left").json()["ad"]
     assert (got["format"], got["focus_x"], got["focus_y"]) == ("tall", 20, 80)
     for bad in ({"format": "huge"}, {"focus_x": 101}):
         r = admin_client.post("/api/ads/", {"name": "B", "kind": "banner", "image": img, "link_url": "https://x.com", **bad}, format="json")
@@ -371,3 +365,13 @@ def _to_png(im):
     b = _io.BytesIO()
     im.save(b, "PNG")
     return b.getvalue()
+
+
+def test_new_placements_and_old_ones_rejected(admin_client, anon):
+    ok = make_ad(admin_client, placements=["home_left", "home_right", "post_left", "post_right", "bottom_bar"])
+    for p in ("home_left", "home_right", "post_left", "post_right", "bottom_bar"):
+        assert anon.get(f"/api/sponsor/pick/?placement={p}").json()["ad"]["id"] == ok["id"]
+    assert anon.get("/api/sponsor/pick/?placement=post_end").json()["ad"] is None
+    for old in ("post_inline", "side_left"):
+        r = admin_client.post("/api/ads/", {"name": "Eski", "kind": "text", "title": "t", "link_url": "https://x.com", "placements": [old]}, format="json")
+        assert r.status_code == 400

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Columns3, Image as ImageIcon, Images, MapPin, Megaphone, Plus, Quote, Trash2, Type, Video, type LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Columns3, Image as ImageIcon, Images, MapPin, Plus, Quote, Trash2, Type, Video, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { errorMessage, uploadImage } from "@/lib/admin-api";
 import { BLOCK_INFO, makeBlock, type BlockType, type EBlock, type EInner } from "@/lib/editor-model";
@@ -16,10 +16,9 @@ import { useToast } from "./Toast";
 export type EditorContext = {
   galleries: { slug: string; title: string }[];
   locations: Location[];
-  ads: { id: number; name: string }[];
 };
 
-const ALL_TYPES: BlockType[] = ["text", "image", "quote", "video", "ad", "columns", "gallery", "map"];
+const ALL_TYPES: BlockType[] = ["text", "image", "quote", "video", "columns", "gallery", "map"];
 
 const ICONS: Record<BlockType, LucideIcon> = {
   text: Type,
@@ -28,7 +27,6 @@ const ICONS: Record<BlockType, LucideIcon> = {
   columns: Columns3,
   gallery: Images,
   video: Video,
-  ad: Megaphone,
   map: MapPin,
 };
 
@@ -114,19 +112,6 @@ function BlockFields({ block, onChange, ctx }: { block: EInner; onChange: (b: EI
             {ctx.galleries.map((g) => <option key={g.slug} value={g.slug}>{g.title}</option>)}
           </select>
         </label>
-      );
-    case "ad":
-      return (
-        <div className="stack">
-          <label>Hangi reklam gösterilsin?
-            <select value={block.ad ?? ""} onChange={(e) => onChange({ ...block, ad: e.target.value ? Number(e.target.value) : undefined })}>
-              <option value="">Rastgele (reklamların ağırlığına göre)</option>
-              {block.ad && !ctx.ads.some((a) => a.id === block.ad) ? <option value={block.ad}>(silinmiş reklam)</option> : null}
-              {ctx.ads.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-          </label>
-          <p className="muted small" style={{ margin: 0 }}>Belirli bir reklam seçersen bu yazıda hep o çıkar (süresi dolana ya da duraklatılana kadar; o zaman rastgele biri gösterilir). Rastgele seçersen “Yazı içi” alanını işaretlemiş reklamlardan, ağırlıklarına göre biri çıkar. <a href="/admin/ads" target="_blank">Reklamlar</a></p>
-        </div>
       );
     case "video": {
       const bad = block.url.trim() !== "" && !youtubeId(block.url);

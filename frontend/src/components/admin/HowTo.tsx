@@ -101,7 +101,7 @@ const STEPS: Step[] = [
     route: "/admin/ads",
     target: "new-ad",
     title: "Reklam ekleme",
-    text: "Elden aldığın bir reklamı buradan eklersin: görselli afiş ya da metinli kart. Bağlantısını, başlangıç-bitiş tarihini ve nerede görüneceğini (ana sayfa, yazı içi, yazı sonu) seçersin. Süresi dolunca kendiliğinden kalkar. Reklamın sayfasında günlük, haftalık ve aylık gösterim/tıklama raporu ve Excel indirme var.",
+    text: "Elden aldığın bir reklamı buradan eklersin: görselli afiş ya da metinli kart. Bağlantısını, başlangıç-bitiş tarihini ve nerede görüneceğini (ana sayfanın ve yazıların sol/sağ yanı, yazı sonu, ekranın altında sabit şerit) seçersin. Süresi dolunca kendiliğinden kalkar. Reklamın sayfasında günlük, haftalık ve aylık gösterim/tıklama raporu ve Excel indirme var.",
   },
   {
     route: "/admin",

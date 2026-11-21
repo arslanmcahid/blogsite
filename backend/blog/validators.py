@@ -60,10 +60,6 @@ def _validate_block(block, where: str, *, nested: bool) -> None:
         _require_str(block, "url", where)
         if not YOUTUBE_RE.match(block["url"].strip()):
             raise ValidationError(f"{where}: video adresi bir YouTube bağlantısı olmalı.")
-    elif kind == "ad":
-        # İsteğe bağlı "ad": belirli bir reklamın id'si; yoksa ağırlığa göre rastgele.
-        if block.get("ad") is not None and not isinstance(block.get("ad"), int):
-            raise ValidationError(f"{where}: 'ad' bir reklam id'si (sayı) olmalı.")
     elif kind == "map":
         if not isinstance(block.get("location"), int):
             raise ValidationError(f"{where}: 'location' bir konum id'si (sayı) olmalı.")
@@ -145,7 +141,9 @@ def validate_info(value) -> None:
             raise ValidationError(f"satır[{i}]: metin çok uzun.")
 
 
-AD_PLACEMENTS = {"home", "post_inline", "post_end", "side_left", "side_right"}
+# Reklam yerleri: home (ana sayfa içeriği), *_left/*_right (geniş ekranda sayfanın iki yanı),
+# post_end (yazının altı), bottom_bar (kaydırırken ekranın altında hep görünen şerit).
+AD_PLACEMENTS = {"home", "home_left", "home_right", "post_left", "post_right", "post_end", "bottom_bar"}
 AD_FORMATS = {"auto", "leaderboard", "billboard", "rect", "tall"}
 
 

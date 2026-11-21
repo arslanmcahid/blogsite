@@ -221,10 +221,12 @@ class Ad(models.Model):
     # Reklamın görüneceği yerler (sitede bu anahtarlarla çağrılır).
     PLACEMENTS = {
         "home": "Ana sayfa",
-        "post_inline": "Yazı içi",
+        "home_left": "Ana sayfa sol yan",
+        "home_right": "Ana sayfa sağ yan",
+        "post_left": "Yazı sol yan",
+        "post_right": "Yazı sağ yan",
         "post_end": "Yazı sonu",
-        "side_left": "Yan alan (sol)",
-        "side_right": "Yan alan (sağ)",
+        "bottom_bar": "Ekran altı (sabit)",
     }
 
     name = models.CharField("Reklamveren / kampanya adı", max_length=120)

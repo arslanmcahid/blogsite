@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getGalleryOrNull, getLocations } from "@/lib/api";
 import type { Block, InnerBlock } from "@/lib/types";
-import { AdSlot } from "./AdSlot";
 import { GalleryGrid } from "./GalleryGrid";
 import { MapView } from "./MapView";
 import { VideoEmbed } from "./VideoEmbed";
@@ -38,8 +37,6 @@ async function BlockItem({ block }: { block: InnerBlock }) {
     }
     case "video":
       return <VideoEmbed url={block.url} />;
-    case "ad":
-      return <AdSlot placement="post_inline" pin={block.ad} />;
     case "map": {
       const locations = (await getLocations()).filter((l) => l.id === block.location);
       return <MapView locations={locations} />;
@@ -49,14 +46,10 @@ async function BlockItem({ block }: { block: InnerBlock }) {
   }
 }
 
-const hasAd = (b: Block) => b.type === "ad" || (b.type === "columns" && b.columns.some((c) => c.some((x) => x.type === "ad")));
-
 export function BlockRenderer({ blocks }: { blocks: Block[] }) {
-  // Yazıda elle "Reklam" bölümü yoksa, "Yazı içi" reklamı yazının ortasına otomatik konur.
-  const autoAt = !blocks.some(hasAd) && blocks.length >= 2 ? Math.ceil(blocks.length / 2) - 1 : -1;
   return (
     <div className="blocks">
-      {blocks.flatMap((block, i) => [
+      {blocks.map((block, i) =>
         block.type === "columns" ? (
           // Gazete düzeni: kolonlar yan yana, dar ekranda alt alta.
           <div key={i} className="block-columns" style={{ "--cols": block.columns.length } as React.CSSProperties}>
@@ -69,8 +62,7 @@ export function BlockRenderer({ blocks }: { blocks: Block[] }) {
         ) : (
           <BlockItem key={i} block={block} />
         ),
-        ...(i === autoAt ? [<AdSlot key={`ad-${i}`} placement="post_inline" />] : []),
-      ])}
+      )}
     </div>
   );
 }

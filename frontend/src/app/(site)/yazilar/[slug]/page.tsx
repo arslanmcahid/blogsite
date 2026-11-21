@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AdSlot } from "@/components/AdSlot";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import { MapView } from "@/components/MapView";
+import { SideRails } from "@/components/SideRails";
 import { InfoCardView, PostMeta, RelatedView, SourcesView } from "@/components/PostParts";
 import { getPost } from "@/lib/api";
 import { formatDate } from "@/lib/format";
@@ -47,6 +49,7 @@ export default async function PostPage({ params }: PageProps<"/yazilar/[slug]">)
 
   return (
     <main id="main" className="container">
+      <Suspense fallback={null}><SideRails kind="post" /></Suspense>
       <article
         className={`post font-${font} width-${width}`}
         style={accent ? ({ "--accent": accent } as React.CSSProperties) : undefined}
