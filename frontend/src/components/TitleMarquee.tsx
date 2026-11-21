@@ -6,13 +6,14 @@ import { HOME_TITLE } from "@/lib/site";
 
 // Boşluklar bölünmeyen boşluktur (NBSP): tarayıcı sıradan boşlukları sekme başlığında tek boşluğa indirir.
 const SEPARATOR = "   •   ";
-const STEP_MS = 300; // bir harf kayma süresi: okunabilir, telaşsız bir hız
+const STEP_MS = 140; // bir harf kayma süresi: harfler bu kadar sık kayınca göz akıcı bir kayma görür
 const HOLD_MS = 4000; // tam başlık her turdan sonra bu kadar sabit durur
 
 /**
  * Yalnızca ANA SAYFADA sekme başlığını yumuşakça akıtır: başlık önce birkaç saniye tam okunur,
- * sonra harf harf kayar, bir tur bitince yine durup bekler. (Sekme başlığı yalnızca metindir;
- * piksel piksel akıcı bir animasyon tarayıcılarda mümkün değil, en yumuşağı budur.)
+ * sonra harf harf kayar, bir tur bitince yine durup bekler. (Sekme başlığı yalnızca metindir; piksel piksel
+ * kayma mümkün değil. Harfler ne kadar sık kayarsa göz o kadar akıcı görür; çok yavaş adımlar "tık tık" hissi verir.
+ * Not: tarayıcılar arka plandaki sekmelerde zamanlayıcıyı saniyede ~1'e düşürür, orada akış yavaşlar.)
  * Diğer sayfalar kendi sabit adını gösterir. Hareketi azaltma tercihi açıksa ve arama motoru/test
  * botlarında çalışmaz; sunucudan gelen asıl başlık (SEO) hiç değişmez.
  */
