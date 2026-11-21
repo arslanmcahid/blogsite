@@ -13,7 +13,13 @@ istekleri bu bloga yönlendirir. Diğer projeye (travel-blog) **sadece Caddyfile
 
 ## 0) Ön hazırlık (bir kez)
 
-1. **DNS:** blog alan adı için bir `A` kaydı, sunucunun IP'sine baksın (alt alan adı olabilir: `blog.ornek.com`).
+1. **DNS (Cloudflare):** `yazdedik.com` için kayıtlar. Dashboard → alan adı → DNS → Records:
+   - `A` · Name: `@` · Content: sunucunun IP'si · Proxy status: **DNS only (gri bulut)**
+   - `CNAME` · Name: `www` · Content: `yazdedik.com` · Proxy status: **DNS only (gri bulut)**
+
+   Önce gri bulutla başla: Caddy'nin Let's Encrypt sertifikasını sorunsuz alması için. Site çalıştıktan sonra
+   istersen turuncu buluta (Cloudflare proxy) geçebilirsin; o zaman SSL/TLS modunu **Full (strict)** yap,
+   yoksa sonsuz yönlendirme döngüsü olur. Kontrol: `dig +short yazdedik.com` sunucunun IP'sini göstermeli.
 2. **Bellek:** Sunucuda takas (swap) yok ve RAM 4 GB civarı. Derleme sırasında yetmezse sistem donabilir; 2 GB swap ekle:
    ```bash
    sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
@@ -58,13 +64,12 @@ docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml exec blogsite-api python manage.py createsuperuser
 ```
 
-(Kullanıcı adı ve güçlü bir parola sorar. Bu hesapla `https://ALANADI/admin` paneline girersin.)
+(Kullanıcı adı ve güçlü bir parola sorar. Bu hesapla `https://yazdedik.com/admin` paneline girersin.)
 
 ## 3) Caddy'ye blogu tanıt (diğer projeye dokunan tek adım)
 
 Caddy'nin yapılandırması travel-blog deposundaki `infra/Caddyfile` dosyasıdır ve konteynere
-`./Caddyfile` olarak bağlanır. `deploy/caddy/blogsite.caddy` içindeki bloğu, `ALANADI` yerine gerçek
-alan adını yazarak o dosyanın **sonuna** ekle. Sonra Caddy'yi yeniden yapılandır (kesinti olmaz):
+`./Caddyfile` olarak bağlanır. `deploy/caddy/blogsite.caddy` içindeki bloğu, (alan adı hazır: `yazdedik.com`) o dosyanın **sonuna** ekle. Sonra Caddy'yi yeniden yapılandır (kesinti olmaz):
 
 ```bash
 docker exec travel-blog-caddy-1 caddy validate --config /etc/caddy/Caddyfile
@@ -80,7 +85,7 @@ docker exec travel-blog-caddy-1 caddy reload --config /etc/caddy/Caddyfile
 Birkaç saniye sonra Let's Encrypt sertifikası otomatik alınır. Kontrol:
 
 ```bash
-curl -I https://ALANADI/api/health/
+curl -I https://yazdedik.com/api/health/
 ```
 
 ## 4) Yedekleme

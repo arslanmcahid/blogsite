@@ -1,14 +1,16 @@
-# Blog için Caddy ayarı. ALANADI yerine blogun gerçek alan adını yaz (örn. blog.ornek.com).
-# Mevcut Caddyfile'a bu bloğu ekle (ya da "import" ile içeri al), sonra:
+# Blog için Caddy ayarı (yazdedik.com). Mevcut Caddyfile'ın SONUNA ekle, sonra:
 #   docker exec <caddy-konteyneri> caddy reload --config /etc/caddy/Caddyfile
 
-# Alan adın ana alan adıysa (örn. ornek.com) ve DNS'te "www" kaydı da varsa şu bloğun başındaki # işaretlerini kaldır.
-# Alt alan adı (blog.ornek.com) kullanıyorsan gerek yok. DNS kaydı olmayan adres için Caddy sertifika almaya çalışıp hata basar.
-# www.ALANADI {
+# www → ana adrese yönlendirme (Cloudflare DNS'te www CNAME kaydı olmalı)
+www.yazdedik.com {
+	redir https://yazdedik.com{uri} permanent
+}
+
+yazdedik.com {
 # 	redir https://ALANADI{uri} permanent
 # }
 
-ALANADI {
+yazdedik.com {
 	encode gzip zstd
 
 	header {
