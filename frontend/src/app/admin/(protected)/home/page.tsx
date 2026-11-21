@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Images, MapPin, MessageSquare, Newspaper, Pencil, Plus, Star, Trash2, X, type LucideIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Images, MapPin, MessageSquare, Newspaper, Pencil, Plus, RotateCcw, Star, Trash2, X, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MapView } from "@/components/MapView";
 import { Markdown } from "@/components/Markdown";
@@ -25,84 +25,47 @@ const HAS_LIMIT: Kind[] = ["latest_posts", "gallery_showcase"];
 type Item = HomeSection & { id: string };
 type Data = { posts: PostSummary[]; galleries: GallerySummary[]; locations: Location[] };
 
-/* ---------- Canlı önizleme: bölümler sitedeki gibi görünür ---------- */
+/* ---------- Canlı önizleme: bölümler sitedeki gibi görünür, her kart tek tek yönetilir ---------- */
+
+type Entry = { id: string; title: string; cover_url: string | null; sub?: string };
+
+const ITEM_KINDS: Kind[] = ["featured_post", "latest_posts", "gallery_showcase"];
+const isGallery = (t: Kind) => t === "gallery_showcase";
+
+function poolOf(type: Kind, data: Data): Entry[] {
+  if (isGallery(type)) return data.galleries.filter((g) => g.is_published).map((g) => ({ id: g.slug, title: g.title, cover_url: g.cover_url }));
+  return data.posts.map((p) => ({ id: p.slug, title: p.title, cover_url: p.cover_url, sub: p.published_at ? formatDate(p.published_at) : undefined }));
+}
+
+/** Bölümde şu an görünen kartlar: elle seçilenler, yoksa sitenin otomatik seçtikleri. */
+function shownOf(s: Item, data: Data, featuredSlug?: string): Entry[] {
+  const pool = poolOf(s.type, data);
+  if (s.items) return s.items.flatMap((slug) => pool.filter((e) => e.id === slug));
+  if (s.type === "featured_post") return pool.slice(0, 1);
+  if (s.type === "latest_posts") return pool.filter((e) => e.id !== featuredSlug).slice(0, s.limit ?? 6);
+  return pool.slice(0, s.limit ?? 4);
+}
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="hp-empty">{children}</p>;
 }
 
-function PostTile({ post, featured = false }: { post: PostSummary; featured?: boolean }) {
+function Tile({ e, featured, tools }: { e: Entry; featured?: boolean; tools: React.ReactNode }) {
   return (
     <article className={featured ? "hp-card hp-card-featured" : "hp-card"}>
-      {post.cover_url && (
+      <div className="hp-item-tools">{tools}</div>
+      {e.cover_url && (
         <div className="hp-cover">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.cover_url} alt="" />
+          <img src={e.cover_url} alt="" />
         </div>
       )}
       <div className="hp-card-body">
-        {post.published_at && <time>{formatDate(post.published_at)}</time>}
-        <h3>{post.title}</h3>
-        {post.excerpt && <p>{post.excerpt}</p>}
+        {e.sub && <time>{e.sub}</time>}
+        <h3>{e.title}</h3>
       </div>
     </article>
   );
-}
-
-function SectionPreview({ s, data, featuredSlug }: { s: Item; data: Data; featuredSlug?: string }) {
-  const posts = data.posts;
-  switch (s.type) {
-    case "featured_post":
-      return (
-        <>
-          {s.title && <h2>{s.title}</h2>}
-          {posts[0] ? <PostTile post={posts[0]} featured /> : <Empty>Yayında yazı olunca en yenisi burada büyük kartla görünecek.</Empty>}
-        </>
-      );
-    case "latest_posts": {
-      const list = posts.filter((p) => p.slug !== featuredSlug).slice(0, s.limit ?? 6);
-      return (
-        <>
-          <h2>{s.title || "Son yazılar"}</h2>
-          {list.length ? <div className="hp-grid">{list.map((p) => <PostTile key={p.id} post={p} />)}</div> : <Empty>Gösterilecek yayında yazı yok.</Empty>}
-        </>
-      );
-    }
-    case "gallery_showcase": {
-      const list = data.galleries.filter((g) => g.is_published).slice(0, s.limit ?? 4);
-      return (
-        <>
-          <h2>{s.title || "Sergiler"}</h2>
-          {list.length ? (
-            <div className="hp-grid">
-              {list.map((g) => (
-                <article key={g.id} className="hp-card">
-                  {g.cover_url && (
-                    <div className="hp-cover">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={g.cover_url} alt="" />
-                    </div>
-                  )}
-                  <div className="hp-card-body"><h3>{g.title}</h3></div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <Empty>Yayında sergi olunca burada görünecek.</Empty>
-          )}
-        </>
-      );
-    }
-    case "map":
-      return (
-        <>
-          <h2>{s.title || "Gittiğim yerler"}</h2>
-          {data.locations.length ? <MapView locations={data.locations} height={260} /> : <Empty>Konum ekleyince harita burada görünecek.</Empty>}
-        </>
-      );
-    case "text":
-      return s.markdown?.trim() ? <Markdown>{s.markdown}</Markdown> : <Empty>Bu kutu boş. Kalem düğmesine basıp mesajını yaz.</Empty>;
-  }
 }
 
 /* ---------- Düzenleme penceresi ---------- */
@@ -131,7 +94,7 @@ function EditDialog({ item, onChange, onClose }: { item: Item; onChange: (p: Par
             <input value={item.title ?? ""} onChange={(e) => onChange({ title: e.target.value })} placeholder={item.type === "featured_post" ? "Başlık göstermeyebilirsin" : undefined} />
           </label>
         )}
-        {HAS_LIMIT.includes(item.type) && (
+        {HAS_LIMIT.includes(item.type) && !item.items && (
           <label>Kaç tane gösterilsin?
             <input type="number" min={1} max={50} value={item.limit ?? ""} placeholder="Varsayılan" onChange={(e) => onChange({ limit: e.target.value ? Number(e.target.value) : undefined })} />
           </label>
@@ -149,12 +112,55 @@ function EditDialog({ item, onChange, onClose }: { item: Item; onChange: (p: Par
   );
 }
 
+/* ---------- Kart seçme penceresi ---------- */
+
+function PickDialog({ title, pool, taken, onPick, onClose }: { title: string; pool: Entry[]; taken: string[]; onPick: (id: string) => void; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+  const choices = pool.filter((e) => !taken.includes(e.id));
+  return (
+    <dialog ref={ref} className="hp-dialog" onClose={onClose} onClick={(e) => e.target === ref.current && ref.current?.close()}>
+      <div className="stack">
+        <div className="hp-dialog-head">
+          <h2>{title}</h2>
+          <button type="button" className="icon" aria-label="Kapat" onClick={() => ref.current?.close()}><X size={16} /></button>
+        </div>
+        {choices.length === 0 ? (
+          <p className="muted">Eklenebilecek başka yayında içerik yok.</p>
+        ) : (
+          <ul className="hp-pick">
+            {choices.map((e) => (
+              <li key={e.id}>
+                <button type="button" onClick={() => { onPick(e.id); ref.current?.close(); }}>
+                  {e.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={e.cover_url} alt="" />
+                  ) : (
+                    <span className="hp-pick-ph" />
+                  )}
+                  <span><strong>{e.title}</strong>{e.sub && <small>{e.sub}</small>}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </dialog>
+  );
+}
+
 /* ---------- Ana editör ---------- */
+
+type Picking = { sectionId: string; replace?: string } | null;
 
 function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
   const toast = useToast();
   const [sections, setSections] = useState<Item[]>(() => initial.map((s) => ({ ...s, id: newId() })));
   const [editing, setEditing] = useState<string | null>(null);
+  const [picking, setPicking] = useState<Picking>(null);
   const [busy, setBusy] = useState(false);
   const lastAdded = useRef<string | null>(null);
 
@@ -163,6 +169,7 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
       const out: HomeSection = { type: s.type };
       if (s.title?.trim()) out.title = s.title.trim();
       if (HAS_LIMIT.includes(s.type) && s.limit) out.limit = s.limit;
+      if (ITEM_KINDS.includes(s.type) && s.items) out.items = s.items;
       if (s.type === "text") out.markdown = s.markdown ?? "";
       return out;
     });
@@ -178,14 +185,17 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  // Yeni eklenen bölüme kaydır.
   useEffect(() => {
     if (!lastAdded.current) return;
     document.getElementById(`hp-${lastAdded.current}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     lastAdded.current = null;
   }, [sections.length]);
 
+  const featuredSlug = sections.some((s) => s.type === "featured_post") ? shownOf(sections.find((s) => s.type === "featured_post")!, data)[0]?.id : undefined;
+  const shown = (s: Item) => shownOf(s, data, featuredSlug);
+
   const patch = (id: string, p: Partial<HomeSection>) => setSections((list) => list.map((s) => (s.id === id ? { ...s, ...p } : s)));
+  const setItems = (id: string, items: string[] | undefined) => patch(id, { items });
   const move = (from: number, to: number) =>
     setSections((l) => {
       if (to < 0 || to >= l.length) return l;
@@ -209,6 +219,20 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
       label: "Geri al",
       onClick: () => setSections((l) => { const n = [...l]; n.splice(Math.min(index, n.length), 0, gone); return n; }),
     });
+  }
+
+  function removeEntry(s: Item, id: string) {
+    const before = shown(s).map((e) => e.id);
+    setItems(s.id, before.filter((x) => x !== id));
+    toast.info("Kart bölümden çıkarıldı.", { label: "Geri al", onClick: () => setItems(s.id, before) });
+  }
+
+  function pick(id: string) {
+    if (!picking) return;
+    const s = sections.find((x) => x.id === picking.sectionId);
+    if (!s) return;
+    const cur = shown(s).map((e) => e.id);
+    setItems(s.id, picking.replace ? cur.map((x) => (x === picking.replace ? id : x)) : [...cur, id]);
   }
 
   async function save() {
@@ -240,35 +264,74 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const featuredSlug = sections.some((s) => s.type === "featured_post") ? data.posts[0]?.slug : undefined;
   const editingItem = sections.find((s) => s.id === editing);
+  const pickingSection = sections.find((s) => s.id === picking?.sectionId);
 
-  const tools = (i: number, s: Item, handle: HandleProps) => {
+  const sectionTools = (i: number, s: Item, handle: HandleProps) => {
     const { ref, ...rest } = handle;
     return (
       <div className="hp-tools">
+        <button type="button" className="hp-pillbtn" onClick={() => setEditing(s.id)}><Pencil size={14} aria-hidden /> Düzenle</button>
+        {ITEM_KINDS.includes(s.type) && s.items && (
+          <button type="button" className="hp-round" aria-label="Otomatiğe döndür" title="Kartları sitenin otomatik seçmesine bırak (en yeniler)" onClick={() => setItems(s.id, undefined)}><RotateCcw size={15} /></button>
+        )}
         <button type="button" className="hp-round" aria-label="Yukarı taşı" title="Yukarı taşı" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={16} /></button>
         <button type="button" className="hp-round" aria-label="Aşağı taşı" title="Aşağı taşı" disabled={i === sections.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={16} /></button>
         <button type="button" ref={ref} className="hp-round hp-grab" aria-label="Sürükleyerek taşı" title="Tutup sürükle" {...rest}><GripVertical size={16} /></button>
-        <button type="button" className="hp-round" aria-label={`${INFO[s.type].label} bölümünü düzenle`} title="Düzenle" onClick={() => setEditing(s.id)}><Pencil size={15} /></button>
         <button type="button" className="hp-round hp-del" aria-label={`${INFO[s.type].label} bölümünü kaldır`} title="Ana sayfadan kaldır" onClick={() => remove(i)}><Trash2 size={15} /></button>
       </div>
     );
   };
 
+  const entryTools = (s: Item, e: Entry, handle: HandleProps) => {
+    const { ref, ...rest } = handle;
+    return (
+      <>
+        {s.type !== "featured_post" && <button type="button" ref={ref} className="hp-round hp-grab" aria-label="Kartı sürükleyerek taşı" title="Tutup sürükle" {...rest}><GripVertical size={15} /></button>}
+        <button type="button" className="hp-round" aria-label={`${e.title} kartını değiştir`} title="Başka bir içerikle değiştir" onClick={() => setPicking({ sectionId: s.id, replace: e.id })}><Pencil size={14} /></button>
+        <button type="button" className="hp-round hp-del" aria-label={`${e.title} kartını çıkar`} title="Bu kartı çıkar" onClick={() => removeEntry(s, e.id)}><Trash2 size={14} /></button>
+      </>
+    );
+  };
+
+  function body(s: Item) {
+    if (s.type === "map")
+      return data.locations.length ? <MapView locations={data.locations} height={260} /> : <Empty>Konum ekleyince harita burada görünecek.</Empty>;
+    if (s.type === "text")
+      return s.markdown?.trim() ? <Markdown>{s.markdown}</Markdown> : <Empty>Bu kutu boş. “Düzenle”ye basıp mesajını yaz.</Empty>;
+    const list = shown(s);
+    const canAdd = s.type !== "featured_post" || list.length === 0;
+    return (
+      <>
+        {s.type === "featured_post" ? (
+          list.map((e) => (
+            <SortableList key={e.id} items={[e]} onChange={() => {}} className="hp-one">
+              {(_, __, handle) => <Tile e={e} featured tools={entryTools(s, e, handle)} />}
+            </SortableList>
+          ))
+        ) : (
+          <SortableList items={list} layout="grid" className="hp-grid" onChange={(next) => setItems(s.id, next.map((e) => e.id))}>
+            {(e, _i, handle) => <Tile e={e} tools={entryTools(s, e, handle)} />}
+          </SortableList>
+        )}
+        {list.length === 0 && <Empty>Bu bölümde gösterilecek içerik yok.</Empty>}
+        {canAdd && (
+          <button type="button" className="hp-addcard" onClick={() => setPicking({ sectionId: s.id })}>
+            <Plus size={16} aria-hidden /> {isGallery(s.type) ? "Sergi ekle" : "Yazı ekle"}
+          </button>
+        )}
+      </>
+    );
+  }
+
+  const defaultTitle: Record<Kind, string> = { featured_post: "", latest_posts: "Son yazılar", gallery_showcase: "Sergiler", map: "Gittiğim yerler", text: "" };
+
   return (
     <div className="hp">
-      <div className="hp-bar">
-        <div className="hp-add" role="group" aria-label="Bölüm ekle">
-          <span className="hp-add-label"><Plus size={14} aria-hidden /> Bölüm ekle</span>
-          {(Object.keys(INFO) as Kind[]).map((t) => {
-            const Icon = INFO[t].icon;
-            return (
-              <button type="button" key={t} className="hp-pill" title={INFO[t].hint} onClick={() => add(t)}>
-                <Icon size={14} aria-hidden /> {INFO[t].short}
-              </button>
-            );
-          })}
+      <div className="hp-head">
+        <div>
+          <h2 className="hp-h">Ana sayfa</h2>
+          <p className="muted">Ziyaretçilerin göreceği ana sayfa aşağıda. Kartları ve bölümleri düzenleyip <strong>Kaydet</strong>’e bas.</p>
         </div>
         <span className="spacer" />
         <span className="state">{dirty ? "Kaydedilmemiş değişiklikler var" : ""}</span>
@@ -276,28 +339,50 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
         <button className="btn primary" onClick={save} disabled={busy}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
       </div>
 
-      <p className="muted hp-hint">Aşağıda ana sayfanın nasıl görüneceğini görüyorsun. Bölümün sağ üstündeki düğmelerle taşı, düzenle ya da kaldır. Bitince <strong>Kaydet</strong>’e bas.</p>
-
-      <div className="hp-canvas">
-        <SortableList items={sections} onChange={setSections} className="hp-list">
-          {(s, i, handle, dragging) => (
-            <section id={`hp-${s.id}`} className={`hp-frame ${dragging ? "dragging" : ""}`}>
-              <span className="hp-tag">{INFO[s.type].label}</span>
-              {tools(i, s, handle)}
-              <div className="hp-body">
-                <SectionPreview s={s} data={data} featuredSlug={featuredSlug} />
-              </div>
-            </section>
-          )}
-        </SortableList>
-        {sections.length === 0 && (
-          <div className="empty-state">
-            <p>Ana sayfan şu an boş. Yukarıdaki düğmelerden bir bölüm ekleyerek başla.</p>
-          </div>
-        )}
+      <div className="hp-add" role="group" aria-label="Bölüm ekle">
+        <span className="hp-add-label"><Plus size={14} aria-hidden /> Bölüm ekle</span>
+        {(Object.keys(INFO) as Kind[]).map((t) => {
+          const Icon = INFO[t].icon;
+          return (
+            <button type="button" key={t} className="hp-pill" title={INFO[t].hint} onClick={() => add(t)}>
+              <Icon size={14} aria-hidden /> {INFO[t].short}
+            </button>
+          );
+        })}
       </div>
 
+      <SortableList items={sections} onChange={setSections} className="hp-list">
+        {(s, i, handle, dragging) => {
+          const auto = ITEM_KINDS.includes(s.type) && !s.items;
+          const heading = s.title || defaultTitle[s.type];
+          return (
+            <section id={`hp-${s.id}`} className={`hp-frame ${dragging ? "dragging" : ""}`}>
+              <div className="hp-frame-head">
+                <div className="hp-titlewrap">
+                  {heading ? <h3 className="hp-title">{heading}</h3> : <span className="hp-title muted">{INFO[s.type].label}</span>}
+                  <span className="hp-tag">{INFO[s.type].label}{auto ? " · otomatik" : ""}</span>
+                </div>
+                {sectionTools(i, s, handle)}
+              </div>
+              <div className="hp-body">{body(s)}</div>
+            </section>
+          );
+        }}
+      </SortableList>
+      {sections.length === 0 && (
+        <div className="empty-state"><p>Ana sayfan şu an boş. Yukarıdaki düğmelerden bir bölüm ekleyerek başla.</p></div>
+      )}
+
       {editingItem && <EditDialog item={editingItem} onChange={(p) => patch(editingItem.id, p)} onClose={() => setEditing(null)} />}
+      {picking && pickingSection && (
+        <PickDialog
+          title={picking.replace ? "Bu kartın yerine ne gelsin?" : isGallery(pickingSection.type) ? "Hangi sergiyi ekleyelim?" : "Hangi yazıyı ekleyelim?"}
+          pool={poolOf(pickingSection.type, data)}
+          taken={shown(pickingSection).map((e) => e.id)}
+          onPick={pick}
+          onClose={() => setPicking(null)}
+        />
+      )}
     </div>
   );
 }
@@ -310,7 +395,6 @@ export default function HomeAdminPage() {
   const err = home.error ?? posts.error ?? galleries.error ?? locations.error;
   if (err) return <p className="admin-error">{err.message}</p>;
   if (!home.data || !posts.data || !galleries.data || !locations.data) return <p className="muted">Yükleniyor…</p>;
-  // Sitede yalnızca yayındaki yazılar görünür; önizleme de aynısını göstersin.
   const published = posts.data.filter((p) => p.status === "published");
   return <HomeForm initial={home.data.sections} data={{ posts: published, galleries: galleries.data, locations: locations.data }} />;
 }

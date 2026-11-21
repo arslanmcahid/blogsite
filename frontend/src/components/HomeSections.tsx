@@ -5,10 +5,17 @@ import { MapView } from "./MapView";
 import { Markdown } from "./Markdown";
 import { PostCard } from "./PostCard";
 
+/** Elle seçilmiş yazılar varsa onlar (sırayla), yoksa en yeniler. */
+async function pickPosts(section: HomeSection, count: number, exclude?: string) {
+  const all = await getPosts();
+  if (section.items) return section.items.flatMap((slug) => all.filter((p) => p.slug === slug));
+  return all.filter((p) => p.slug !== exclude).slice(0, count);
+}
+
 async function Section({ section, featuredSlug }: { section: HomeSection; featuredSlug?: string }) {
   switch (section.type) {
     case "featured_post": {
-      const [post] = await getPosts();
+      const [post] = await pickPosts(section, 1);
       if (!post) return null;
       return (
         <section>
@@ -18,7 +25,7 @@ async function Section({ section, featuredSlug }: { section: HomeSection; featur
       );
     }
     case "latest_posts": {
-      const posts = (await getPosts()).filter((p) => p.slug !== featuredSlug).slice(0, section.limit ?? 6);
+      const posts = await pickPosts(section, section.limit ?? 6, featuredSlug);
       if (posts.length === 0) return null;
       return (
         <section>
@@ -28,7 +35,8 @@ async function Section({ section, featuredSlug }: { section: HomeSection; featur
       );
     }
     case "gallery_showcase": {
-      const galleries = (await getGalleries()).slice(0, section.limit ?? 4);
+      const all = await getGalleries();
+      const galleries = section.items ? section.items.flatMap((slug) => all.filter((g) => g.slug === slug)) : all.slice(0, section.limit ?? 4);
       if (galleries.length === 0) return null;
       return (
         <section>
@@ -69,7 +77,8 @@ async function Section({ section, featuredSlug }: { section: HomeSection; featur
 export async function HomeSections() {
   const { sections } = await getHome();
   // "Öne çıkan" yazı, "Son yazılar" listesinde tekrar gösterilmesin.
-  const [featured] = sections.some((s) => s.type === "featured_post") ? await getPosts() : [];
+  const featuredSection = sections.find((s) => s.type === "featured_post");
+  const [featured] = featuredSection ? await pickPosts(featuredSection, 1) : [];
   return (
     <>
       {sections.map((s, i) => <Section key={i} section={s} featuredSlug={featured?.slug} />)}

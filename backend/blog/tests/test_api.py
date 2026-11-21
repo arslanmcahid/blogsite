@@ -177,3 +177,10 @@ def test_home_layout(admin_client, anon):
     assert admin_client.put("/api/home/", {"sections": [{"type": "x"}]}, format="json").status_code == 400
     assert admin_client.put("/api/home/", {"sections": [{"type": "latest_posts", "limit": 99}]}, format="json").status_code == 400
     assert HomeLayout.objects.count() == 1
+
+
+def test_home_sections_accept_items_and_reject_bad_items(admin_client):
+    ok = admin_client.put("/api/home/", {"sections": [{"type": "latest_posts", "items": ["a", "b"]}]}, format="json")
+    assert ok.status_code == 200
+    bad = admin_client.put("/api/home/", {"sections": [{"type": "latest_posts", "items": [1]}]}, format="json")
+    assert bad.status_code == 400

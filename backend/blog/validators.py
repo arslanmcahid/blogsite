@@ -92,6 +92,12 @@ def validate_home_sections(value) -> None:
         limit = section.get("limit")
         if limit is not None and (not isinstance(limit, int) or not 1 <= limit <= 50):
             raise ValidationError(f"bölüm[{i}]: 'limit' 1-50 arası bir sayı olmalı.")
+        # "items": elle seçilmiş yazı/sergi slug'ları. Yoksa bölüm otomatik (en yeniler) dolar.
+        items = section.get("items")
+        if items is not None and (
+            not isinstance(items, list) or len(items) > 50 or not all(isinstance(x, str) for x in items)
+        ):
+            raise ValidationError(f"bölüm[{i}]: 'items' en fazla 50 slug'lık bir liste olmalı.")
 
 
 def validate_theme(value) -> None:

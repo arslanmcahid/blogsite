@@ -68,6 +68,8 @@ export type HomeSection = {
   title?: string;
   limit?: number;
   markdown?: string;
+  /** Elle seçilmiş yazı/sergi slug'ları; yoksa en yeniler otomatik gösterilir. */
+  items?: string[];
 };
 
 export type HomeLayout = { sections: HomeSection[] };
