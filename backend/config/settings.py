@@ -130,3 +130,16 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "http://localhost:3000")
+
+
+# --- Production (DEBUG=0): TLS'i önündeki Caddy sonlandırır ---
+if not DEBUG:
+    # Caddy "X-Forwarded-Proto: https" gönderir; Django bağlantıyı güvenli saysın.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # Çerezler yalnızca HTTPS üzerinden gitsin (oturum ve CSRF).
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # HTTP→HTTPS yönlendirmesini ve HSTS başlığını Caddy yapıyor; burada tekrarlamıyoruz.
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    X_FRAME_OPTIONS = "DENY"

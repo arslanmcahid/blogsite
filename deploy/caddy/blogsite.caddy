@@ -1,0 +1,39 @@
+# Blog için Caddy ayarı. ALANADI yerine blogun gerçek alan adını yaz (örn. blog.ornek.com).
+# Mevcut Caddyfile'a bu bloğu ekle (ya da "import" ile içeri al), sonra:
+#   docker exec <caddy-konteyneri> caddy reload --config /etc/caddy/Caddyfile
+
+# Alan adın ana alan adıysa (örn. ornek.com) ve DNS'te "www" kaydı da varsa şu bloğun başındaki # işaretlerini kaldır.
+# Alt alan adı (blog.ornek.com) kullanıyorsan gerek yok. DNS kaydı olmayan adres için Caddy sertifika almaya çalışıp hata basar.
+# www.ALANADI {
+# 	redir https://ALANADI{uri} permanent
+# }
+
+ALANADI {
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Yüklenen fotoğraf boyutu üst sınırı (editör 15 MB'a izin veriyor)
+	request_body {
+		max_size 20MB
+	}
+
+	# API ve görseller doğrudan Django'ya gider (Next'i arada yormaz, yükleme limiti takılmaz).
+	handle /api/* {
+		reverse_proxy blogsite-api:8000
+	}
+	handle /media/* {
+		reverse_proxy blogsite-api:8000
+	}
+
+	# Geri kalan her şey (sayfalar, /admin paneli) Next.js'e
+	handle {
+		reverse_proxy blogsite-web:3000
+	}
+}

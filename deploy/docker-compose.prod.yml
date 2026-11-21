@@ -1,0 +1,88 @@
+# Blog sitesi: üretim kurulumu. Sunucuda zaten çalışan Caddy'nin ARKASINA bağlanır
+# (kendi 80/443 portlarını açmaz, kendi Caddy'sini getirmez).
+#
+# Kullanım (deploy/ klasöründe):
+#   cp .env.example .env        # değerleri doldur
+#   docker compose -f docker-compose.prod.yml build backend
+#   docker compose -f docker-compose.prod.yml build frontend
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Servis adları bilerek benzersiz (blogsite-*): Caddy'nin ağındaki diğer projelerin
+# adlarıyla (client, server, postgres…) karışmasın diye.
+# Proje adı yerel geliştirme düzeninden (kök docker-compose.yml → "blogsite") bilerek farklı:
+# aynı adlı Docker volume'leri karışıp geliştirme veritabanına dokunmasın.
+name: blogsite-prod
+
+services:
+  blogsite-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: blog
+      POSTGRES_USER: blog
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanımlanmalı}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blog -d blog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+    mem_limit: 384m
+
+  blogsite-api:
+    build: ../backend
+    restart: unless-stopped
+    depends_on:
+      blogsite-db:
+        condition: service_healthy
+    environment:
+      DJANGO_DEBUG: "0"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY tanımlanmalı}
+      DJANGO_ALLOWED_HOSTS: ${DOMAIN:?DOMAIN tanımlanmalı},blogsite-api,127.0.0.1
+      CSRF_TRUSTED_ORIGINS: https://${DOMAIN}
+      CORS_ALLOWED_ORIGINS: https://${DOMAIN}
+      POSTGRES_DB: blog
+      POSTGRES_USER: blog
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: blogsite-db
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+    volumes:
+      - media:/app/media
+    # Caddy /api ve /media isteklerini doğrudan buraya yollar; Django'nun /admin sayfası dışarıya açılmaz.
+    networks:
+      internal:
+      proxy:
+        aliases: [blogsite-api]
+    mem_limit: 512m
+
+  blogsite-web:
+    build:
+      context: ../frontend
+      args:
+        API_URL: http://blogsite-api:8000
+    restart: unless-stopped
+    depends_on:
+      blogsite-api:
+        condition: service_healthy
+    environment:
+      # Sunucu tarafı render, backend'e Docker ağı içinden gider.
+      API_URL: http://blogsite-api:8000
+      SITE_URL: https://${DOMAIN}
+    networks:
+      internal:
+      proxy:
+        aliases: [blogsite-web]
+    mem_limit: 384m
+
+volumes:
+  pgdata:
+  media:
+
+networks:
+  internal:
+  # Caddy'nin bağlı olduğu mevcut ağ (docker network ls ile bak). Bu proje ağı oluşturmaz, sadece bağlanır.
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-travel-blog_default}
