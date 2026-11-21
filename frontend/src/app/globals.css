@@ -150,3 +150,21 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
 .ad-copy span { color: var(--muted); }
 .ad-cta { color: var(--accent) !important; font-weight: 600; }
 .ad-slot a:hover .ad-text .ad-inner, .ad-slot a:hover .ad-banner img { border-color: var(--accent); }
+
+/* Geniş ekranlarda içeriğin iki yanındaki boşluk: reklam alanı */
+.site-shell { display: grid; grid-template-columns: 1fr minmax(0, 1040px) 1fr; }
+.site-main { grid-column: 2; min-width: 0; }
+.rail { display: none; }
+@media (min-width: 1400px) {
+  .rail { display: block; grid-row: 1; align-self: start; }
+  .rail-left { grid-column: 1; justify-self: end; padding-right: 20px; }
+  .rail-right { grid-column: 3; justify-self: start; padding-left: 20px; }
+  .rail-sticky { position: sticky; top: 20px; width: 160px; margin-top: 90px; }
+  .rail .ad-slot { margin: 0; }
+}
+@media (min-width: 1700px) { .rail-sticky { width: 300px; } }
+.rail .ad-text .ad-inner { flex-direction: column; align-items: flex-start; }
+.rail .ad-thumb { width: 100%; height: auto; aspect-ratio: 16 / 10; }
+.rail .ad-copy strong { font-size: 1rem; }
+.ad-banner .ad-frame { display: block; width: 100%; overflow: hidden; border-radius: 10px; border: 1px solid var(--line); }
+.ad-banner .ad-frame img { height: 100%; object-fit: cover; border: 0; border-radius: 0; }

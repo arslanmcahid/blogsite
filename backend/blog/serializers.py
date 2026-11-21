@@ -149,7 +149,7 @@ class AdSerializer(serializers.ModelSerializer):
         model = Ad
         fields = [
             "id", "name", "kind", "image", "image_url", "title", "body", "cta", "link_url",
-            "placements", "weight", "is_active", "starts_on", "ends_on", "status", "views", "clicks", "created_at",
+            "placements", "weight", "format", "focus_x", "focus_y", "is_active", "starts_on", "ends_on", "status", "views", "clicks", "created_at",
         ]
         read_only_fields = ["created_at"]
 
@@ -187,4 +187,4 @@ class PublicAdSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ad
-        fields = ["id", "kind", "name", "title", "body", "cta", "image_url", "image_width", "image_height"]
+        fields = ["id", "kind", "name", "title", "body", "cta", "image_url", "image_width", "image_height", "format", "focus_x", "focus_y"]

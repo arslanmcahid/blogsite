@@ -145,9 +145,15 @@ def validate_info(value) -> None:
             raise ValidationError(f"satır[{i}]: metin çok uzun.")
 
 
-AD_PLACEMENTS = {"home", "post_inline", "post_end"}
+AD_PLACEMENTS = {"home", "post_inline", "post_end", "side_left", "side_right"}
+AD_FORMATS = {"auto", "leaderboard", "billboard", "rect", "tall"}
 
 
 def validate_placements(value) -> None:
     if not isinstance(value, list) or not all(v in AD_PLACEMENTS for v in value):
         raise ValidationError(f"Yerleşimler şunlardan olmalı: {', '.join(sorted(AD_PLACEMENTS))}.")
+
+
+def validate_ad_format(value) -> None:
+    if value not in AD_FORMATS:
+        raise ValidationError(f"Biçim şunlardan biri olmalı: {', '.join(sorted(AD_FORMATS))}.")

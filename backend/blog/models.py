@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from .validators import (
+    validate_ad_format,
     validate_blocks,
     validate_home_sections,
     validate_info,
@@ -205,6 +206,8 @@ class Ad(models.Model):
         "home": "Ana sayfa",
         "post_inline": "Yazı içi",
         "post_end": "Yazı sonu",
+        "side_left": "Yan alan (sol)",
+        "side_right": "Yan alan (sağ)",
     }
 
     name = models.CharField("Reklamveren / kampanya adı", max_length=120)
@@ -214,6 +217,11 @@ class Ad(models.Model):
     body = models.CharField(max_length=300, blank=True)
     cta = models.CharField("Düğme yazısı", max_length=40, blank=True)
     link_url = models.URLField(max_length=500)
+    # Afiş düzeltme: görselin gösterileceği oran (auto = görselin kendi oranı) ve kırpılırken
+    # görselin hangi noktası ortada kalsın (yüzde olarak; 50/50 = orta).
+    format = models.CharField(max_length=12, default="auto", validators=[validate_ad_format])
+    focus_x = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
+    focus_y = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
     placements = models.JSONField(default=list, blank=True, validators=[validate_placements])
     # Gösterilme ağırlığı: 3 olan reklam, 1 olandan ortalama 3 kat sık gösterilir.
     weight = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(10)])

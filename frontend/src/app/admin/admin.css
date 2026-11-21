@@ -413,3 +413,6 @@
 .bar span { display: block; height: 100%; background: var(--a-dark); border-radius: 9999px; }
 .admin-root label.check { flex-direction: row; align-items: flex-start; gap: 8px; font-weight: 500; }
 .check input { margin-top: 3px; }
+.focus-pick button { position: relative; display: block; padding: 0; border: 1px solid var(--a-input); border-radius: 10px; overflow: hidden; cursor: crosshair; width: 100%; background: none; }
+.focus-pick img { display: block; width: 100%; height: auto; }
+.focus-dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff; background: var(--a-dark); box-shadow: 0 0 0 2px var(--a-dark), 0 2px 8px rgba(0,0,0,.4); pointer-events: none; }

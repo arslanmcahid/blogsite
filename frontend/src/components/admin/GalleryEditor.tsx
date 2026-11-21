@@ -14,7 +14,7 @@ import { useToast } from "./Toast";
 
 type Item = { id: string; image: number; url: string; caption: string };
 
-function GalleryForm({ gallery, locations }: { gallery: Gallery | null; locations: Location[] }) {
+function GalleryForm({ gallery, locations, onSaved }: { gallery: Gallery | null; locations: Location[]; onSaved: () => void }) {
   const router = useRouter();
   const toast = useToast();
   const initial = useMemo(
@@ -32,7 +32,7 @@ function GalleryForm({ gallery, locations }: { gallery: Gallery | null; location
   const [published, setPublished] = useState(initial.published);
   const [location, setLocation] = useState(initial.location);
   const [items, setItems] = useState<Item[]>(initial.items);
-  const [slug, setSlug] = useState(gallery?.slug ?? null);
+  const slug = gallery?.slug ?? null;
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -58,10 +58,10 @@ function GalleryForm({ gallery, locations }: { gallery: Gallery | null; location
         : await adminFetch<Gallery>("/api/galleries/", { method: "POST", json: payload });
       setSaved(snapshot);
       toast.success(published ? "Sergi kaydedildi ve yayında." : "Sergi taslak olarak kaydedildi.");
-      if (!slug) {
-        setSlug(res.slug);
-        window.history.replaceState(null, "", `/admin/galleries/${encodeURIComponent(res.slug)}`);
-      }
+      // Sayfa kaydedilen veriyle baştan yüklenir.
+      window.scrollTo({ top: 0 });
+      if (!slug) router.replace(`/admin/galleries/${encodeURIComponent(res.slug)}`);
+      else onSaved();
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -194,5 +194,5 @@ export function GalleryEditor({ slug }: { slug?: string }) {
   const error = gallery.error ?? locs.error;
   if (error) return <p className="admin-error">{error.message}</p>;
   if ((slug && !gallery.data) || !locs.data) return <p className="muted">Yükleniyor…</p>;
-  return <GalleryForm key={slug ?? "new"} gallery={gallery.data ?? null} locations={locs.data} />;
+  return <GalleryForm key={`${slug ?? "new"}:${JSON.stringify(gallery.data ?? null)}`} onSaved={gallery.reload} gallery={gallery.data ?? null} locations={locs.data} />;
 }

@@ -82,7 +82,7 @@ function payloadOf(d: Draft) {
 
 const snapshotOf = (d: Draft) => JSON.stringify(payloadOf(d));
 
-function PostForm({ post, locations, galleries, allPosts, initialCategories, initialTags, ads }: {
+function PostForm({ post, locations, galleries, allPosts, initialCategories, initialTags, ads, onSaved }: {
   post: Post | null;
   locations: Location[];
   galleries: GallerySummary[];
@@ -90,13 +90,14 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
   initialCategories: Category[];
   initialTags: Tag[];
   ads: { id: number; name: string }[];
+  onSaved: () => void;
 }) {
   const [categories, setCategories] = useState(initialCategories);
   const [tags, setTags] = useState(initialTags);
   const router = useRouter();
   const toast = useToast();
 
-  const [slug, setSlug] = useState<string | null>(post?.slug ?? null);
+  const slug = post?.slug ?? null;
   const [draft, setDraft] = useState<Draft>(() => draftFromPost(post));
   const [savedSnapshot, setSavedSnapshot] = useState(() => snapshotOf(draftFromPost(post)));
   const [saving, setSaving] = useState(false);
@@ -126,14 +127,14 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
       const publishedAt = toLocalInput(saved.published_at);
       setSavedSnapshot(snapshotOf({ ...sent, publishedAt }));
       setDraft((d) => (d.publishedAt === sent.publishedAt ? { ...d, publishedAt } : d));
-      if (!slug) {
-        setSlug(saved.slug);
-        window.history.replaceState(null, "", `/admin/posts/${encodeURIComponent(saved.slug)}`);
-      }
       toast.success(
         sent.status === "published" ? "Yazı kaydedildi ve yayında." : "Yazı taslak olarak kaydedildi.",
         sent.status === "published" ? { label: "Sitede gör", onClick: () => window.open(`/yazilar/${encodeURIComponent(saved.slug)}`, "_blank") } : undefined,
       );
+      // Sayfa kaydedilen veriyle baştan yüklenir: eski taslak, açık sekmeler ve geçici durum unutulur.
+      window.scrollTo({ top: 0 });
+      if (!slug) router.replace(`/admin/posts/${encodeURIComponent(saved.slug)}`);
+      else onSaved();
     } catch (e) {
       setSaveFailed(true);
       toast.error(`Kaydedilemedi: ${errorMessage(e)}`);
@@ -339,5 +340,5 @@ export function PostEditor({ slug }: { slug?: string }) {
   if (error) return <p className="admin-error">{error.message}</p>;
   if ((slug && !post.data) || !locs.data || !gals.data || !all.data || !cats.data || !tgs.data || !adList.data) return <p className="muted">Yükleniyor…</p>;
   // key: farklı yazıya geçildiğinde form durumu sıfırlansın
-  return <PostForm key={slug ?? "new"} post={post.data ?? null} locations={locs.data} galleries={gals.data} allPosts={all.data} initialCategories={cats.data} initialTags={tgs.data} ads={adList.data.map((a) => ({ id: a.id, name: a.name }))} />;
+  return <PostForm key={`${slug ?? "new"}:${post.data?.updated_at ?? ""}`} onSaved={post.reload} post={post.data ?? null} locations={locs.data} galleries={gals.data} allPosts={all.data} initialCategories={cats.data} initialTags={tgs.data} ads={adList.data.map((a) => ({ id: a.id, name: a.name }))} />;
 }

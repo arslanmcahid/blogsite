@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type {
+  AdPlacement,
   Category,
   Gallery,
   GallerySummary,
@@ -7,6 +8,7 @@ import type {
   Location,
   Post,
   PostSummary,
+  PublicAd,
   Tag,
 } from "./types";
 
@@ -46,3 +48,15 @@ export const getGallery = (slug: string) =>
 export const getLocations = () => apiGet<Location[]>("/api/locations/");
 export const getGalleryOrNull = (slug: string) =>
   apiGetOrNull<Gallery>(`/api/galleries/${encodeURIComponent(slug)}/`);
+
+/** Bir yer için o an yayında olan (ağırlığa göre seçilmiş) reklam; yoksa null. Hata sayfayı bozmaz. */
+export async function pickAd(placement: AdPlacement, opts: { pin?: number; exclude?: number[] } = {}): Promise<PublicAd | null> {
+  const q = new URLSearchParams({ placement });
+  if (opts.pin) q.set("pin", String(opts.pin));
+  if (opts.exclude?.length) q.set("exclude", opts.exclude.join(","));
+  try {
+    return (await apiGetOrNull<{ ad: PublicAd | null }>(`/api/sponsor/pick/?${q}`))?.ad ?? null;
+  } catch {
+    return null;
+  }
+}

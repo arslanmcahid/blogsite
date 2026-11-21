@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { adminFetch, errorMessage, useApi } from "@/lib/admin-api";
 import { ctr } from "@/lib/ads";
-import { AD_PLACEMENTS, type Ad, type AdPlacement, type AdStats, type AdminImage } from "@/lib/types";
+import { AD_FORMATS, AD_PLACEMENTS, type Ad, type AdFormat, type AdPlacement, type AdStats, type AdminImage } from "@/lib/types";
 import { AdCard } from "../AdCard";
 import { ImagePicker } from "./ImagePicker";
 import { useToast } from "./Toast";
@@ -21,22 +21,25 @@ type Draft = {
   link_url: string;
   placements: AdPlacement[];
   weight: number;
+  format: AdFormat;
+  focus_x: number;
+  focus_y: number;
   is_active: boolean;
   starts_on: string;
   ends_on: string;
 };
 
-const blank: Draft = { name: "", kind: "banner", image: null, title: "", body: "", cta: "", link_url: "", placements: ["home", "post_end"], weight: 1, is_active: true, starts_on: "", ends_on: "" };
+const blank: Draft = { name: "", kind: "banner", image: null, title: "", body: "", cta: "", link_url: "", placements: ["home", "post_end"], weight: 1, format: "auto", focus_x: 50, focus_y: 50, is_active: true, starts_on: "", ends_on: "" };
 
 const fromAd = (a: Ad): Draft => ({
   name: a.name, kind: a.kind, image: a.image && a.image_url ? { id: a.image, url: a.image_url, w: null, h: null } : null,
-  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements, weight: a.weight, is_active: a.is_active,
+  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements, weight: a.weight, format: a.format, focus_x: a.focus_x, focus_y: a.focus_y, is_active: a.is_active,
   starts_on: a.starts_on ?? "", ends_on: a.ends_on ?? "",
 });
 
 const payload = (d: Draft) => ({
   name: d.name.trim(), kind: d.kind, image: d.image?.id ?? null, title: d.title.trim(), body: d.body.trim(), cta: d.cta.trim(),
-  link_url: d.link_url.trim(), placements: d.placements, weight: d.weight, is_active: d.is_active,
+  link_url: d.link_url.trim(), placements: d.placements, weight: d.weight, format: d.format, focus_x: d.focus_x, focus_y: d.focus_y, is_active: d.is_active,
   starts_on: d.starts_on || null, ends_on: d.ends_on || null,
 });
 
@@ -138,10 +141,10 @@ function Report({ ad }: { ad: Ad }) {
 
 /* ---------- Form ---------- */
 
-function AdForm({ ad }: { ad: Ad | null }) {
+function AdForm({ ad, onSaved }: { ad: Ad | null; onSaved: () => void }) {
   const router = useRouter();
   const toast = useToast();
-  const [id, setId] = useState<number | null>(ad?.id ?? null);
+  const id = ad?.id ?? null;
   const [draft, setDraft] = useState<Draft>(() => (ad ? fromAd(ad) : blank));
   const [saved, setSaved] = useState(() => JSON.stringify(payload(ad ? fromAd(ad) : blank)));
   const [saving, setSaving] = useState(false);
@@ -164,11 +167,11 @@ function AdForm({ ad }: { ad: Ad | null }) {
         : await adminFetch<Ad>("/api/ads/", { method: "POST", json: body });
       setDraft((cur) => ({ ...cur, link_url: link }));
       setSaved(JSON.stringify(payload({ ...d, link_url: link })));
-      if (!id) {
-        setId(res.id);
-        window.history.replaceState(null, "", `/admin/ads/${res.id}`);
-      }
       toast.success("Reklam kaydedildi.");
+      // Sayfa kaydedilen veriyle baştan yüklenir.
+      window.scrollTo({ top: 0 });
+      if (!id) router.replace(`/admin/ads/${res.id}`);
+      else onSaved();
     } catch (e) {
       toast.error(`Kaydedilemedi: ${errorMessage(e)}`);
     } finally {
@@ -201,7 +204,7 @@ function AdForm({ ad }: { ad: Ad | null }) {
     update({ placements: draft.placements.includes(p) ? draft.placements.filter((x) => x !== p) : [...draft.placements, p] });
 
   const preview = useMemo(
-    () => ({ kind: draft.kind, name: draft.name || "Reklamveren", title: draft.title, body: draft.body, cta: draft.cta, image_url: draft.image?.url ?? null, image_width: draft.image?.w ?? null, image_height: draft.image?.h ?? null }),
+    () => ({ kind: draft.kind, name: draft.name || "Reklamveren", title: draft.title, body: draft.body, cta: draft.cta, image_url: draft.image?.url ?? null, image_width: draft.image?.w ?? null, image_height: draft.image?.h ?? null, format: draft.format, focus_x: draft.focus_x, focus_y: draft.focus_y }),
     [draft],
   );
 
@@ -265,6 +268,46 @@ function AdForm({ ad }: { ad: Ad | null }) {
             )}
           </div>
 
+          {draft.kind === "banner" && draft.image && (
+            <div className="card stack">
+              <div>
+                <h2>Afişi düzelt</h2>
+                <p className="muted small" style={{ margin: 0 }}>Afişin hangi biçimde (oranda) gösterileceğini seç. Görsel bu orana kırpılır. Sonra görselin üzerine tıklayıp kırpılırken ortada <strong>kalmasını istediğin noktayı</strong> işaretle.</p>
+              </div>
+              <label>Biçim
+                <select value={draft.format} onChange={(e) => update({ format: e.target.value as AdFormat })}>
+                  {AD_FORMATS.map((f) => <option key={f.id} value={f.id}>{f.label} — {f.hint}</option>)}
+                </select>
+              </label>
+              {draft.format !== "auto" && (
+                <>
+                  <div className="focus-pick" title="Kalmasını istediğin noktaya tıkla">
+                    <button
+                      type="button"
+                      aria-label="Odak noktasını görsel üzerinde seç"
+                      onClick={(e) => {
+                        const r = e.currentTarget.getBoundingClientRect();
+                        update({ focus_x: Math.round(((e.clientX - r.left) / r.width) * 100), focus_y: Math.round(((e.clientY - r.top) / r.height) * 100) });
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={draft.image.url} alt="" draggable={false} />
+                      <span className="focus-dot" style={{ left: `${draft.focus_x}%`, top: `${draft.focus_y}%` }} />
+                    </button>
+                  </div>
+                  <div className="row">
+                    <span className="muted small">Odak: %{draft.focus_x}, %{draft.focus_y}</span>
+                    <span className="spacer" />
+                    <button type="button" className="btn small" onClick={() => update({ focus_x: 50, focus_y: 50 })}>Ortala</button>
+                  </div>
+                </>
+              )}
+              {draft.placements.some((p) => p === "side_left" || p === "side_right") && draft.format !== "tall" && draft.format !== "rect" && (
+                <p className="admin-error" style={{ background: "var(--a-warn-bg)", color: "var(--a-warn)", borderColor: "transparent" }}>Yan alanlar dar olduğu için “Dikey 160×600” ya da “Dikdörtgen 300×250” biçimi daha iyi görünür.</p>
+              )}
+            </div>
+          )}
+
           {id && ad && <Report ad={ad} />}
         </div>
 
@@ -324,5 +367,5 @@ export function AdEditor({ id }: { id?: string }) {
   const ad = useApi<Ad>(id ? `/api/ads/${id}/` : null);
   if (ad.error) return <p className="admin-error">{ad.error.message}</p>;
   if (id && !ad.data) return <p className="muted">Yükleniyor…</p>;
-  return <AdForm key={id ?? "new"} ad={ad.data ?? null} />;
+  return <AdForm key={`${id ?? "new"}:${JSON.stringify(ad.data ?? null)}`} onSaved={ad.reload} ad={ad.data ?? null} />;
 }

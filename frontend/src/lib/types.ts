@@ -103,11 +103,23 @@ export type AdminImage = {
 };
 
 // --- Reklamlar ---
-export type AdPlacement = "home" | "post_inline" | "post_end";
+export type AdPlacement = "home" | "post_inline" | "post_end" | "side_left" | "side_right";
+export type AdFormat = "auto" | "leaderboard" | "billboard" | "rect" | "tall";
+
+/** Afiş biçimleri: görsel bu orana kırpılır (auto: görselin kendi oranı). */
+export const AD_FORMATS: { id: AdFormat; label: string; ratio: string | null; hint: string }[] = [
+  { id: "auto", label: "Görselin kendi oranı", ratio: null, hint: "Kırpılmaz" },
+  { id: "leaderboard", label: "Yatay şerit 728×90", ratio: "728 / 90", hint: "Yazı içi ve sonu için" },
+  { id: "billboard", label: "Geniş yatay 970×250", ratio: "970 / 250", hint: "Ana sayfa için" },
+  { id: "rect", label: "Dikdörtgen 300×250", ratio: "300 / 250", hint: "Her yerde" },
+  { id: "tall", label: "Dikey 160×600", ratio: "160 / 600", hint: "Yan alanlar için" },
+];
 export const AD_PLACEMENTS: { id: AdPlacement; label: string; hint: string }[] = [
-  { id: "home", label: "Ana sayfa", hint: "Ana sayfa düzenindeki “Reklam” bölümleri" },
-  { id: "post_inline", label: "Yazı içi", hint: "Yazılarda “Reklam” bölümü eklediğin yerler" },
+  { id: "home", label: "Ana sayfa", hint: "Ana sayfanın içinde (düzenden “Reklam” bölümü eklemezsen ilk bölümün altında)" },
+  { id: "post_inline", label: "Yazı içi", hint: "Yazının içinde (yazıya “Reklam” bölümü eklemezsen ortasına otomatik)" },
   { id: "post_end", label: "Yazı sonu", hint: "Her yazının altında, otomatik" },
+  { id: "side_left", label: "Yan alan (sol)", hint: "Geniş ekranlarda sayfanın sol boşluğunda, tüm sayfalarda" },
+  { id: "side_right", label: "Yan alan (sağ)", hint: "Geniş ekranlarda sayfanın sağ boşluğunda, tüm sayfalarda" },
 ];
 
 export type PublicAd = {
@@ -120,6 +132,9 @@ export type PublicAd = {
   image_url: string | null;
   image_width: number | null;
   image_height: number | null;
+  format: AdFormat;
+  focus_x: number;
+  focus_y: number;
 };
 
 export type Ad = {
@@ -134,6 +149,9 @@ export type Ad = {
   link_url: string;
   placements: AdPlacement[];
   weight: number;
+  format: AdFormat;
+  focus_x: number;
+  focus_y: number;
   is_active: boolean;
   starts_on: string | null;
   ends_on: string | null;

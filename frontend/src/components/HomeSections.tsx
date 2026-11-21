@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { getGalleries, getHome, getLocations, getPosts } from "@/lib/api";
 import type { HomeSection } from "@/lib/types";
 import { AdSlot } from "./AdSlot";
@@ -80,11 +81,18 @@ async function Section({ section, featuredSlug }: { section: HomeSection; featur
 export async function HomeSections() {
   const { sections } = await getHome();
   // "Öne çıkan" yazı, "Son yazılar" listesinde tekrar gösterilmesin.
+  const hasAdSection = sections.some((s) => s.type === "ad");
   const featuredSection = sections.find((s) => s.type === "featured_post");
   const [featured] = featuredSection ? await pickPosts(featuredSection, 1) : [];
   return (
     <>
-      {sections.map((s, i) => <Section key={i} section={s} featuredSlug={featured?.slug} />)}
+      {sections.map((s, i) => (
+        <Fragment key={i}>
+          <Section section={s} featuredSlug={featured?.slug} />
+          {/* Düzende elle "Reklam" bölümü yoksa, "Ana sayfa" reklamı ilk bölümün altında otomatik görünür. */}
+          {i === 0 && !hasAdSection && <AdSlot placement="home" />}
+        </Fragment>
+      ))}
     </>
   );
 }

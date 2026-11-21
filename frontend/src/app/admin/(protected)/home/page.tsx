@@ -157,7 +157,7 @@ function PickDialog({ title, pool, taken, onPick, onClose }: { title: string; po
 
 type Picking = { sectionId: string; replace?: string } | null;
 
-function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
+function HomeForm({ initial, data, onSaved }: { initial: HomeSection[]; data: Data; onSaved: () => void }) {
   const toast = useToast();
   const [sections, setSections] = useState<Item[]>(() => initial.map((s) => ({ ...s, id: newId() })));
   const [editing, setEditing] = useState<string | null>(null);
@@ -243,6 +243,9 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
       await adminFetch<HomeLayout>("/api/home/", { method: "PUT", json: { sections: clean(sections) } });
       setSaved(snapshot);
       toast.success("Ana sayfa kaydedildi.", { label: "Sitede gör", onClick: () => window.open("/", "_blank") });
+      // Sayfa kaydedilen veriyle baştan yüklenir.
+      window.scrollTo({ top: 0 });
+      onSaved();
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -399,5 +402,5 @@ export default function HomeAdminPage() {
   if (err) return <p className="admin-error">{err.message}</p>;
   if (!home.data || !posts.data || !galleries.data || !locations.data) return <p className="muted">Yükleniyor…</p>;
   const published = posts.data.filter((p) => p.status === "published");
-  return <HomeForm initial={home.data.sections} data={{ posts: published, galleries: galleries.data, locations: locations.data }} />;
+  return <HomeForm key={JSON.stringify(home.data.sections)} onSaved={home.reload} initial={home.data.sections} data={{ posts: published, galleries: galleries.data, locations: locations.data }} />;
 }

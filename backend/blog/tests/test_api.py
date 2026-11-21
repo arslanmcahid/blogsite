@@ -322,3 +322,14 @@ def test_weighted_pick_and_pinned_ad(admin_client, anon):
     assert anon.get(f"/api/sponsor/pick/?placement=home&pin={other['id']}").json()["ad"]["id"] in (heavy["id"], light["id"])
     assert admin_client.post("/api/posts/", {"title": "P", "blocks": [{"type": "ad", "ad": heavy["id"]}]}, format="json").status_code == 201
     assert admin_client.post("/api/posts/", {"title": "P2", "blocks": [{"type": "ad", "ad": "x"}]}, format="json").status_code == 400
+
+
+def test_side_placements_and_banner_format(admin_client, anon):
+    img = make_image(admin_client)
+    ok = admin_client.post("/api/ads/", {"name": "Yan", "kind": "banner", "image": img, "link_url": "https://x.com", "placements": ["side_left", "side_right"], "format": "tall", "focus_x": 20, "focus_y": 80}, format="json")
+    assert ok.status_code == 201, ok.content
+    got = anon.get("/api/sponsor/pick/?placement=side_left").json()["ad"]
+    assert (got["format"], got["focus_x"], got["focus_y"]) == ("tall", 20, 80)
+    for bad in ({"format": "huge"}, {"focus_x": 101}):
+        r = admin_client.post("/api/ads/", {"name": "B", "kind": "banner", "image": img, "link_url": "https://x.com", **bad}, format="json")
+        assert r.status_code == 400
