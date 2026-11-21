@@ -176,3 +176,13 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
 .rail .ad-copy strong { font-size: 1rem; }
 .ad-banner .ad-frame { display: block; width: 100%; margin: 0 auto; overflow: hidden; border-radius: 10px; border: 1px solid var(--line); }
 .ad-banner .ad-frame img { height: 100%; object-fit: cover; border: 0; border-radius: 0; }
+
+/* 404 sayfası */
+.nf-hero { text-align: center; padding: 3rem 0 2.5rem; }
+.nf-book { width: 88px; height: 88px; color: var(--accent); margin: 0 auto 0.5rem; display: block; }
+.nf-code { margin: 0; font-family: var(--serif); font-size: 4.5rem; line-height: 1; color: var(--accent); letter-spacing: 0.04em; }
+.nf-hero h1 { margin: 0.6rem 0 0.4rem; font-size: 2rem; }
+.nf-hero .lead { max-width: 34rem; margin: 0 auto 1.4rem; }
+.nf-actions { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; margin: 0; }
+.nf section { margin-top: 1rem; }
+.nf section h2 { font-size: 1.2rem; }

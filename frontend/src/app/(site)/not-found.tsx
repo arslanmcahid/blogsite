@@ -1,11 +1,9 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { NotFoundView } from "@/components/NotFoundView";
 
-// (site) grubunun içinden notFound() çağrılınca gösterilir; başlık grubun layout'undan gelir.
+export const metadata: Metadata = { title: "Sayfa bulunamadı", robots: { index: false } };
+
+// (site) grubunun içinden notFound() çağrılınca gösterilir; menü ve alt bilgi grubun layout'undan gelir.
 export default function SiteNotFound() {
-  return (
-    <main id="main" className="container">
-      <h1>Sayfa bulunamadı</h1>
-      <p><Link href="/">Ana sayfaya dön</Link></p>
-    </main>
-  );
+  return <NotFoundView />;
 }
