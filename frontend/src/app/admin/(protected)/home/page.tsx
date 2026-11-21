@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Images, MapPin, MessageSquare, Newspaper, Pencil, Plus, RotateCcw, Star, Trash2, X, type LucideIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Images, MapPin, Megaphone, MessageSquare, Newspaper, Pencil, Plus, RotateCcw, Star, Trash2, X, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MapView } from "@/components/MapView";
 import { Markdown } from "@/components/Markdown";
@@ -19,6 +19,7 @@ const INFO: Record<Kind, { label: string; short: string; icon: LucideIcon; hint:
   gallery_showcase: { label: "Sergi vitrini", short: "Sergiler", icon: Images, hint: "Fotoğraf sergilerin." },
   map: { label: "Gezi haritası", short: "Harita", icon: MapPin, hint: "Tüm konum etiketlerin tek haritada." },
   text: { label: "Serbest yazı", short: "Yazı kutusu", icon: MessageSquare, hint: "Karşılama mesajı gibi kısa bir metin." },
+  ad: { label: "Reklam alanı", short: "Reklam", icon: Megaphone, hint: "Yayındaki bir reklam gösterilir (Reklamlar sayfasından yönetilir)." },
 };
 const HAS_LIMIT: Kind[] = ["latest_posts", "gallery_showcase"];
 
@@ -297,6 +298,8 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
   function body(s: Item) {
     if (s.type === "map")
       return data.locations.length ? <MapView locations={data.locations} height={260} /> : <Empty>Konum ekleyince harita burada görünecek.</Empty>;
+    if (s.type === "ad")
+      return <Empty>Burada reklam gösterilir. Hangi reklamın çıkacağı <a href="/admin/ads" target="_blank" style={{ textDecoration: "underline" }}>Reklamlar</a> sayfasındaki ayarlara göre belirlenir.</Empty>;
     if (s.type === "text")
       return s.markdown?.trim() ? <Markdown>{s.markdown}</Markdown> : <Empty>Bu kutu boş. “Düzenle”ye basıp mesajını yaz.</Empty>;
     const list = shown(s);
@@ -324,7 +327,7 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
     );
   }
 
-  const defaultTitle: Record<Kind, string> = { featured_post: "", latest_posts: "Son yazılar", gallery_showcase: "Sergiler", map: "Gittiğim yerler", text: "" };
+  const defaultTitle: Record<Kind, string> = { featured_post: "", latest_posts: "Son yazılar", gallery_showcase: "Sergiler", map: "Gittiğim yerler", text: "", ad: "" };
 
   return (
     <div className="hp">

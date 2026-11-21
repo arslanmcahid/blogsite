@@ -233,3 +233,73 @@ def test_accepts_youtube_video_block(admin_client):
     for url in ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ"]:
         r = admin_client.post("/api/posts/", {"title": "V", "blocks": [{"type": "video", "url": url}]}, format="json")
         assert r.status_code == 201, r.content
+
+
+# --- Reklamlar ---
+
+def make_image(admin_client):
+    return admin_client.post("/api/images/", {"file": png_file()}, format="multipart").json()["id"]
+
+
+def make_ad(admin_client, **over):
+    body = {"name": "Kafe", "kind": "text", "title": "Kahve indirimi", "link_url": "https://kafe.example.com", "placements": ["home", "post_end"], **over}
+    r = admin_client.post("/api/ads/", body, format="json")
+    assert r.status_code == 201, r.content
+    return r.json()
+
+
+def test_ads_are_staff_only(admin_client, anon):
+    assert anon.get("/api/ads/").status_code in (401, 403)
+    assert anon.post("/api/ads/", {}, format="json").status_code in (401, 403)
+    make_ad(admin_client)
+    assert admin_client.get("/api/ads/").status_code == 200
+
+
+def test_ad_validation(admin_client):
+    assert admin_client.post("/api/ads/", {"name": "A", "kind": "banner", "link_url": "https://x.com", "placements": ["home"]}, format="json").status_code == 400  # görsel yok
+    assert admin_client.post("/api/ads/", {"name": "A", "kind": "text", "link_url": "https://x.com"}, format="json").status_code == 400  # başlık yok
+    assert admin_client.post("/api/ads/", {"name": "A", "kind": "text", "title": "t", "link_url": "javascript:alert(1)"}, format="json").status_code == 400
+    assert admin_client.post("/api/ads/", {"name": "A", "kind": "text", "title": "t", "link_url": "https://x.com", "placements": ["evil"]}, format="json").status_code == 400
+    assert admin_client.post("/api/ads/", {"name": "A", "kind": "text", "title": "t", "link_url": "https://x.com", "starts_on": "2026-02-02", "ends_on": "2026-02-01"}, format="json").status_code == 400
+    ok = admin_client.post("/api/ads/", {"name": "B", "kind": "banner", "image": make_image(admin_client), "link_url": "https://x.com", "placements": ["home"]}, format="json")
+    assert ok.status_code == 201
+
+
+def test_pick_only_running_ads_for_the_placement(admin_client, anon):
+    ad = make_ad(admin_client)
+    make_ad(admin_client, name="Kapalı", is_active=False)
+    make_ad(admin_client, name="Bitmiş", ends_on="2000-01-01")
+    make_ad(admin_client, name="Başka yer", placements=["post_inline"])
+    got = anon.get("/api/sponsor/pick/?placement=home").json()["ad"]
+    assert got["id"] == ad["id"]
+    assert "link_url" not in got  # adres sadece yönlendirmeden bilinir
+    assert anon.get("/api/sponsor/pick/?placement=post_end").json()["ad"]["id"] == ad["id"]
+    assert anon.get(f"/api/sponsor/pick/?placement=home&exclude={ad['id']}").json()["ad"] is None
+
+
+def test_views_and_clicks_are_counted_per_day(admin_client, anon):
+    ad = make_ad(admin_client)
+    for _ in range(3):
+        assert anon.post(f"/api/sponsor/{ad['id']}/view/?p=home").status_code == 204
+    r = anon.get(f"/api/sponsor/{ad['id']}/go/?p=home")
+    assert r.status_code == 302 and r["Location"] == "https://kafe.example.com"
+    # botlar ve yönetici sayılmaz
+    anon.post(f"/api/sponsor/{ad['id']}/view/?p=home", HTTP_USER_AGENT="Googlebot/2.1")
+    from django.test import Client
+
+    staff_browser = Client()  # gerçek oturumlu tarayıcı (Django oturumu)
+    staff_browser.force_login(get_user_model().objects.get(username="admin"))
+    staff_browser.post(f"/api/sponsor/{ad['id']}/view/?p=home")
+    stats = admin_client.get(f"/api/ads/{ad['id']}/stats/").json()
+    assert stats["totals"] == {"views": 3, "clicks": 1}
+    assert len(stats["rows"]) == 1
+    assert stats["by_placement"][0]["placement"] == "home"
+    assert admin_client.get(f"/api/ads/{ad['id']}/").json()["views"] == 3
+    assert admin_client.get(f"/api/ads/{ad['id']}/stats/?group=month").json()["totals"]["views"] == 3
+    assert admin_client.get(f"/api/ads/{ad['id']}/stats/?from=2999-01-01").json()["totals"]["views"] == 0
+
+
+def test_ad_section_and_block_are_valid(admin_client):
+    assert admin_client.put("/api/home/", {"sections": [{"type": "ad"}]}, format="json").status_code == 200
+    r = admin_client.post("/api/posts/", {"title": "R", "blocks": [{"type": "ad"}]}, format="json")
+    assert r.status_code == 201

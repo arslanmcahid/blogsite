@@ -98,6 +98,12 @@ const STEPS: Step[] = [
     text: "Her bölümün sağ üstündeki düğmelerle düzenler, yukarı-aşağı taşır ya da kaldırırsın. Kartların da kendi düğmeleri var. Bitince Kaydet’e bas. Yanlışlıkla sildiysen “Geri al” çıkar.",
   },
   {
+    route: "/admin/ads",
+    target: "new-ad",
+    title: "Reklam ekleme",
+    text: "Elden aldığın bir reklamı buradan eklersin: görselli afiş ya da metinli kart. Bağlantısını, başlangıç-bitiş tarihini ve nerede görüneceğini (ana sayfa, yazı içi, yazı sonu) seçersin. Süresi dolunca kendiliğinden kalkar. Reklamın sayfasında günlük, haftalık ve aylık gösterim/tıklama raporu ve Excel indirme var.",
+  },
+  {
     route: "/admin",
     title: "Hepsi bu kadar!",
     text: "Artık hazırsın. Takıldığın bir yerde sol alttaki “Nasıl kullanılır?” düğmesiyle bu turu istediğin zaman yeniden izleyebilirsin.",

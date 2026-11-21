@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getGalleryOrNull, getLocations } from "@/lib/api";
 import type { Block, InnerBlock } from "@/lib/types";
+import { AdSlot } from "./AdSlot";
 import { GalleryGrid } from "./GalleryGrid";
 import { MapView } from "./MapView";
 import { VideoEmbed } from "./VideoEmbed";
@@ -37,6 +38,8 @@ async function BlockItem({ block }: { block: InnerBlock }) {
     }
     case "video":
       return <VideoEmbed url={block.url} />;
+    case "ad":
+      return <AdSlot placement="post_inline" />;
     case "map": {
       const locations = (await getLocations()).filter((l) => l.id === block.location);
       return <MapView locations={locations} />;

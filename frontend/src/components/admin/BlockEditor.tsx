@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Columns3, Image as ImageIcon, Images, MapPin, Plus, Quote, Trash2, Type, Video, type LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Columns3, Image as ImageIcon, Images, MapPin, Megaphone, Plus, Quote, Trash2, Type, Video, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { errorMessage, uploadImage } from "@/lib/admin-api";
 import { BLOCK_INFO, makeBlock, type BlockType, type EBlock, type EInner } from "@/lib/editor-model";
@@ -18,7 +18,7 @@ export type EditorContext = {
   locations: Location[];
 };
 
-const ALL_TYPES: BlockType[] = ["text", "image", "quote", "video", "columns", "gallery", "map"];
+const ALL_TYPES: BlockType[] = ["text", "image", "quote", "video", "ad", "columns", "gallery", "map"];
 
 const ICONS: Record<BlockType, LucideIcon> = {
   text: Type,
@@ -27,6 +27,7 @@ const ICONS: Record<BlockType, LucideIcon> = {
   columns: Columns3,
   gallery: Images,
   video: Video,
+  ad: Megaphone,
   map: MapPin,
 };
 
@@ -113,6 +114,8 @@ function BlockFields({ block, onChange, ctx }: { block: EInner; onChange: (b: EI
           </select>
         </label>
       );
+    case "ad":
+      return <p className="muted small" style={{ margin: 0 }}>Burada yayındaki bir reklam gösterilir. Hangi reklamın çıkacağını <a href="/admin/ads" target="_blank">Reklamlar</a> sayfasında “Yazı içi” alanını seçerek belirlersin. Reklam yoksa bu bölüm sitede görünmez.</p>;
     case "video": {
       const bad = block.url.trim() !== "" && !youtubeId(block.url);
       return (

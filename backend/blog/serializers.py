@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from django.utils import timezone
 
-from .models import Category, Gallery, GalleryItem, HomeLayout, Image, Location, Post, Tag
+from .models import Ad, Category, Gallery, GalleryItem, HomeLayout, Image, Location, Post, Tag
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -135,3 +135,56 @@ class HomeLayoutSerializer(serializers.ModelSerializer):
         model = HomeLayout
         fields = ["sections", "updated_at"]
         read_only_fields = ["updated_at"]
+
+
+class AdSerializer(serializers.ModelSerializer):
+    """Yönetim tarafı: reklamın tüm alanları + toplam gösterim/tıklama."""
+
+    image_url = serializers.CharField(source="image.file.url", read_only=True, default=None)
+    status = serializers.SerializerMethodField()
+    views = serializers.IntegerField(read_only=True, default=0)
+    clicks = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Ad
+        fields = [
+            "id", "name", "kind", "image", "image_url", "title", "body", "cta", "link_url",
+            "placements", "is_active", "starts_on", "ends_on", "status", "views", "clicks", "created_at",
+        ]
+        read_only_fields = ["created_at"]
+
+    def get_status(self, obj):
+        today = timezone.localdate()
+        if not obj.is_active:
+            return "paused"
+        if obj.starts_on and obj.starts_on > today:
+            return "scheduled"
+        if obj.ends_on and obj.ends_on < today:
+            return "ended"
+        return "running"
+
+    def validate(self, attrs):
+        kind = attrs.get("kind", getattr(self.instance, "kind", Ad.Kind.BANNER))
+        image = attrs.get("image", getattr(self.instance, "image", None))
+        title = attrs.get("title", getattr(self.instance, "title", ""))
+        if kind == Ad.Kind.BANNER and not image:
+            raise serializers.ValidationError({"image": "Afiş için bir görsel seç."})
+        if kind == Ad.Kind.TEXT and not title.strip():
+            raise serializers.ValidationError({"title": "Metinli kart için bir başlık yaz."})
+        start = attrs.get("starts_on", getattr(self.instance, "starts_on", None))
+        end = attrs.get("ends_on", getattr(self.instance, "ends_on", None))
+        if start and end and end < start:
+            raise serializers.ValidationError({"ends_on": "Bitiş tarihi başlangıçtan önce olamaz."})
+        return attrs
+
+
+class PublicAdSerializer(serializers.ModelSerializer):
+    """Ziyaretçiye giden hâli: sadece gösterim için gereken alanlar."""
+
+    image_url = serializers.CharField(source="image.file.url", read_only=True, default=None)
+    image_width = serializers.IntegerField(source="image.width", read_only=True, default=None)
+    image_height = serializers.IntegerField(source="image.height", read_only=True, default=None)
+
+    class Meta:
+        model = Ad
+        fields = ["id", "kind", "name", "title", "body", "cta", "image_url", "image_width", "image_height"]

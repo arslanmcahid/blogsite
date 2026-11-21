@@ -58,6 +58,8 @@ function Item({ block, locations }: { block: InnerBlock; locations: Location[] }
       return <PreviewGallery slug={block.gallery} />;
     case "video":
       return <VideoEmbed url={block.url} />;
+    case "ad":
+      return <p className="ad-ph">Reklam alanı (yayındaki reklam burada görünür)</p>;
     case "map":
       return <PreviewMap id={block.location} locations={locations} />;
   }
@@ -111,6 +113,7 @@ export function PostPreview({
           ),
         )}
       </div>
+      <p className="ad-ph">Yazı sonu reklam alanı</p>
       <SourcesView sources={sources} />
       <RelatedView posts={related} newTab />
       {postLocations.length > 0 && (

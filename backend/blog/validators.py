@@ -60,6 +60,8 @@ def _validate_block(block, where: str, *, nested: bool) -> None:
         _require_str(block, "url", where)
         if not YOUTUBE_RE.match(block["url"].strip()):
             raise ValidationError(f"{where}: video adresi bir YouTube bağlantısı olmalı.")
+    elif kind == "ad":
+        pass  # reklam yeri: içeriği reklam yönetiminden gelir
     elif kind == "map":
         if not isinstance(block.get("location"), int):
             raise ValidationError(f"{where}: 'location' bir konum id'si (sayı) olmalı.")
@@ -87,7 +89,7 @@ def validate_blocks(value) -> None:
         _validate_block(block, f"blok[{i}]", nested=False)
 
 
-HOME_SECTION_TYPES = {"featured_post", "latest_posts", "gallery_showcase", "map", "text"}
+HOME_SECTION_TYPES = {"featured_post", "latest_posts", "gallery_showcase", "map", "text", "ad"}
 
 
 def validate_home_sections(value) -> None:
@@ -139,3 +141,11 @@ def validate_info(value) -> None:
             raise ValidationError(f"satır[{i}]: 'label' ve 'value' metin olmalı.")
         if len(row["label"]) > 80 or len(row["value"]) > 300:
             raise ValidationError(f"satır[{i}]: metin çok uzun.")
+
+
+AD_PLACEMENTS = {"home", "post_inline", "post_end"}
+
+
+def validate_placements(value) -> None:
+    if not isinstance(value, list) or not all(v in AD_PLACEMENTS for v in value):
+        raise ValidationError(f"Yerleşimler şunlardan olmalı: {', '.join(sorted(AD_PLACEMENTS))}.")

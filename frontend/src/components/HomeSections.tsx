@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getGalleries, getHome, getLocations, getPosts } from "@/lib/api";
 import type { HomeSection } from "@/lib/types";
+import { AdSlot } from "./AdSlot";
 import { MapView } from "./MapView";
 import { Markdown } from "./Markdown";
 import { PostCard } from "./PostCard";
@@ -67,6 +68,8 @@ async function Section({ section, featuredSlug }: { section: HomeSection; featur
         </section>
       );
     }
+    case "ad":
+      return <AdSlot placement="home" />;
     case "text":
       return section.markdown ? <section><Markdown>{section.markdown}</Markdown></section> : null;
     default:

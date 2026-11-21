@@ -7,6 +7,7 @@ export type InnerBlock =
   | { type: "quote"; text: string; author?: string }
   | { type: "gallery"; gallery: string }
   | { type: "video"; url: string }
+  | { type: "ad" }
   | { type: "map"; location: number };
 
 export type Block =
@@ -82,7 +83,7 @@ export type GallerySummary = {
 export type Gallery = GallerySummary & { items: GalleryItem[] };
 
 export type HomeSection = {
-  type: "featured_post" | "latest_posts" | "gallery_showcase" | "map" | "text";
+  type: "featured_post" | "latest_posts" | "gallery_showcase" | "map" | "text" | "ad";
   title?: string;
   limit?: number;
   markdown?: string;
@@ -99,4 +100,51 @@ export type AdminImage = {
   alt: string;
   width: number | null;
   height: number | null;
+};
+
+// --- Reklamlar ---
+export type AdPlacement = "home" | "post_inline" | "post_end";
+export const AD_PLACEMENTS: { id: AdPlacement; label: string; hint: string }[] = [
+  { id: "home", label: "Ana sayfa", hint: "Ana sayfa düzenindeki “Reklam” bölümleri" },
+  { id: "post_inline", label: "Yazı içi", hint: "Yazılarda “Reklam” bölümü eklediğin yerler" },
+  { id: "post_end", label: "Yazı sonu", hint: "Her yazının altında, otomatik" },
+];
+
+export type PublicAd = {
+  id: number;
+  kind: "banner" | "text";
+  name: string;
+  title: string;
+  body: string;
+  cta: string;
+  image_url: string | null;
+  image_width: number | null;
+  image_height: number | null;
+};
+
+export type Ad = {
+  id: number;
+  name: string;
+  kind: "banner" | "text";
+  image: number | null;
+  image_url: string | null;
+  title: string;
+  body: string;
+  cta: string;
+  link_url: string;
+  placements: AdPlacement[];
+  is_active: boolean;
+  starts_on: string | null;
+  ends_on: string | null;
+  status: "running" | "scheduled" | "ended" | "paused";
+  views: number | null;
+  clicks: number | null;
+  created_at: string;
+};
+
+export type AdStats = {
+  group: "day" | "week" | "month";
+  rows: { period: string; views: number; clicks: number }[];
+  by_placement: { placement: AdPlacement; views: number; clicks: number }[];
+  totals: { views: number; clicks: number };
 };

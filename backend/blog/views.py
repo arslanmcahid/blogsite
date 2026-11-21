@@ -1,4 +1,12 @@
+import random
+import re
+
 from django.contrib.auth import authenticate, login, logout
+from django.db.models import F, Q, Sum
+from django.db.models.functions import TruncMonth, TruncWeek
+from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import action
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -8,8 +16,10 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Category, Gallery, HomeLayout, Image, Location, Post, Tag
+from .models import Ad, AdDailyStat, Category, Gallery, HomeLayout, Image, Location, Post, Tag
 from .serializers import (
+    AdSerializer,
+    PublicAdSerializer,
     CategorySerializer,
     GallerySerializer,
     HomeLayoutSerializer,
@@ -151,3 +161,95 @@ def me(request):
     if not is_staff(request):
         return Response({"detail": "Giriş yapılmadı."}, status=401)
     return Response({"username": request.user.get_username()})
+
+
+# --- Reklamlar ---
+
+BOT_RE = re.compile(r"bot|crawl|spider|slurp|preview|headless|facebookexternalhit", re.I)
+
+
+def _countable(request) -> bool:
+    """Botlar ve giriş yapmış yönetici (kendi tıklamaları) sayılmaz."""
+    return not BOT_RE.search(request.headers.get("User-Agent", "")) and not is_staff(request)
+
+
+def _bump(ad: Ad, placement: str, field: str) -> None:
+    if placement not in Ad.PLACEMENTS:
+        placement = "home"
+    stat, _ = AdDailyStat.objects.get_or_create(ad=ad, date=timezone.localdate(), placement=placement)
+    # F(): iki ziyaretçi aynı anda gelse de sayaç birbirini ezmez (veritabanında artırılır).
+    AdDailyStat.objects.filter(pk=stat.pk).update(**{field: F(field) + 1})
+
+
+class AdViewSet(viewsets.ModelViewSet):
+    permission_classes = [StaffOnly]
+    serializer_class = AdSerializer
+
+    def get_queryset(self):
+        return Ad.objects.select_related("image").annotate(views=Sum("stats__views"), clicks=Sum("stats__clicks"))
+
+    @action(detail=True, methods=["get"])
+    def stats(self, request, pk=None):
+        """?group=day|week|month&from=YYYY-MM-DD&to=YYYY-MM-DD → dönem dönem gösterim/tıklama."""
+        ad = self.get_object()
+        qs = AdDailyStat.objects.filter(ad=ad)
+        if f := request.query_params.get("from"):
+            qs = qs.filter(date__gte=f)
+        if t := request.query_params.get("to"):
+            qs = qs.filter(date__lte=t)
+        group = request.query_params.get("group", "day")
+        trunc = {"week": TruncWeek, "month": TruncMonth}.get(group)
+        period = trunc("date") if trunc else F("date")
+        rows = (
+            qs.annotate(period=period).values("period").annotate(views=Sum("views"), clicks=Sum("clicks")).order_by("period")
+        )
+        by_place = qs.values("placement").annotate(views=Sum("views"), clicks=Sum("clicks")).order_by("placement")
+        totals = qs.aggregate(views=Sum("views"), clicks=Sum("clicks"))
+        return Response({
+            "group": group,
+            "rows": [{"period": r["period"], "views": r["views"] or 0, "clicks": r["clicks"] or 0} for r in rows],
+            "by_placement": [{"placement": r["placement"], "views": r["views"] or 0, "clicks": r["clicks"] or 0} for r in by_place],
+            "totals": {"views": totals["views"] or 0, "clicks": totals["clicks"] or 0},
+        })
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def sponsor_pick(request):
+    """Bir yer için o an yayında olan reklamlardan birini (rastgele dönüşümlü) verir."""
+    placement = request.query_params.get("placement", "")
+    exclude = [int(x) for x in request.query_params.get("exclude", "").split(",") if x.isdigit()]
+    today = timezone.localdate()
+    candidates = (
+        Ad.objects.select_related("image")
+        .filter(is_active=True)
+        .filter(Q(starts_on__isnull=True) | Q(starts_on__lte=today))
+        .filter(Q(ends_on__isnull=True) | Q(ends_on__gte=today))
+        .exclude(id__in=exclude)
+    )
+    ads = [a for a in candidates if placement in a.placements]
+    if not ads:
+        return Response({"ad": None})
+    return Response({"ad": PublicAdSerializer(random.choice(ads)).data})
+
+
+@csrf_exempt
+def sponsor_view(request, pk):
+    """Tarayıcı reklamı ekranda görünce çağırır (gösterim sayacı)."""
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    if _countable(request):
+        ad = Ad.objects.filter(pk=pk).first()
+        if ad and ad.is_running():
+            _bump(ad, request.GET.get("p", ""), "views")
+    return HttpResponse(status=204)
+
+
+def sponsor_go(request, pk):
+    """Reklam tıklaması: sayar, sonra reklamverenin adresine yönlendirir."""
+    ad = Ad.objects.filter(pk=pk).first()
+    if ad is None:
+        raise Http404
+    if _countable(request):
+        _bump(ad, request.GET.get("p", ""), "clicks")
+    return HttpResponseRedirect(ad.link_url)

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdSlot } from "@/components/AdSlot";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import { MapView } from "@/components/MapView";
 import { InfoCardView, PostMeta, RelatedView, SourcesView } from "@/components/PostParts";
@@ -67,6 +68,7 @@ export default async function PostPage({ params }: PageProps<"/yazilar/[slug]">)
         )}
         <InfoCardView rows={post.info} />
         <BlockRenderer blocks={post.blocks} />
+        <AdSlot placement="post_end" />
         <SourcesView sources={post.sources} />
         <RelatedView posts={post.related_details} />
         {post.location_details.length > 0 && (

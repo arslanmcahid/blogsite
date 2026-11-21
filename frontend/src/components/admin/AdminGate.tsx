@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, FileText, Globe, Images, LayoutDashboard, LogOut, MapPin, Navigation } from "lucide-react";
+import { CircleHelp, FileText, Megaphone, Globe, Images, LayoutDashboard, LogOut, MapPin, Navigation } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/admin/galleries", label: "Fotoğraf sergileri", icon: Images },
   { href: "/admin/locations", label: "Konumlar", icon: MapPin },
   { href: "/admin/home", label: "Ana sayfa düzeni", icon: Navigation },
+  { href: "/admin/ads", label: "Reklamlar", icon: Megaphone },
 ];
 
 /** Üst çubuktaki sayfa başlığı. */
@@ -27,6 +28,9 @@ function titleFor(pathname: string): string {
   if (pathname.startsWith("/admin/galleries/")) return "Sergiyi düzenle";
   if (pathname.startsWith("/admin/locations")) return "Konumlar";
   if (pathname.startsWith("/admin/home")) return "Ana sayfa düzeni";
+  if (pathname === "/admin/ads") return "Reklamlar";
+  if (pathname === "/admin/ads/new") return "Yeni reklam";
+  if (pathname.startsWith("/admin/ads/")) return "Reklamı düzenle";
   return "Yönetim";
 }
 

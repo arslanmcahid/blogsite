@@ -2,7 +2,14 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 
-from .validators import validate_blocks, validate_home_sections, validate_info, validate_sources, validate_theme
+from .validators import (
+    validate_blocks,
+    validate_home_sections,
+    validate_info,
+    validate_placements,
+    validate_sources,
+    validate_theme,
+)
 
 
 class Image(models.Model):
@@ -183,3 +190,59 @@ class HomeLayout(models.Model):
 
     def __str__(self):
         return "Ana sayfa düzeni"
+
+
+class Ad(models.Model):
+    """Elden satılan reklam: görsel afiş ya da metinli kart. Reklamverenden kod alınmaz."""
+
+    class Kind(models.TextChoices):
+        BANNER = "banner", "Afiş"
+        TEXT = "text", "Metinli kart"
+
+    # Reklamın görüneceği yerler (sitede bu anahtarlarla çağrılır).
+    PLACEMENTS = {
+        "home": "Ana sayfa",
+        "post_inline": "Yazı içi",
+        "post_end": "Yazı sonu",
+    }
+
+    name = models.CharField("Reklamveren / kampanya adı", max_length=120)
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.BANNER)
+    image = models.ForeignKey(Image, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    title = models.CharField(max_length=120, blank=True)
+    body = models.CharField(max_length=300, blank=True)
+    cta = models.CharField("Düğme yazısı", max_length=40, blank=True)
+    link_url = models.URLField(max_length=500)
+    placements = models.JSONField(default=list, blank=True, validators=[validate_placements])
+    is_active = models.BooleanField(default=True)
+    starts_on = models.DateField(null=True, blank=True)
+    ends_on = models.DateField(null=True, blank=True)  # bu gün dahil
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+    def is_running(self, today=None) -> bool:
+        today = today or timezone.localdate()
+        return (
+            self.is_active
+            and (self.starts_on is None or self.starts_on <= today)
+            and (self.ends_on is None or today <= self.ends_on)
+        )
+
+
+class AdDailyStat(models.Model):
+    """Reklamın günlük gösterim/tıklama sayısı (günlük, haftalık, aylık raporlar buradan toplanır)."""
+
+    ad = models.ForeignKey(Ad, on_delete=models.CASCADE, related_name="stats")
+    date = models.DateField()
+    placement = models.CharField(max_length=20)
+    views = models.PositiveIntegerField(default=0)
+    clicks = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["ad", "date", "placement"], name="uniq_ad_day_placement")]
+        ordering = ["date"]
