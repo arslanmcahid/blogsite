@@ -18,6 +18,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {children}
       <footer className="site-footer">
         <a href="/feed.xml">RSS</a>
+        {" · "}
+        <a href="/admin">Yönetim</a>
       </footer>
       {bar && <BottomBar ad={bar} />}
     </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminLink } from "./AdminLink";
 
 export function SiteHeader() {
   return (
@@ -8,6 +9,7 @@ export function SiteHeader() {
         <Link href="/yazilar">Yazılar</Link>
         <Link href="/galeri">Galeri</Link>
         <Link href="/harita">Harita</Link>
+        <AdminLink />
       </nav>
     </header>
   );
