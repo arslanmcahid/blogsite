@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SITE_NAME } from "@/lib/site";
 import { AdminLink } from "./AdminLink";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function SiteHeader() {
   return (
@@ -11,6 +12,7 @@ export function SiteHeader() {
         <Link href="/galeri">Galeri</Link>
         <Link href="/harita">Harita</Link>
         <AdminLink />
+        <ThemeToggle />
       </nav>
     </header>
   );

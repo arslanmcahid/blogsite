@@ -9,8 +9,20 @@
   --serif: Georgia, "Times New Roman", serif;
 }
 
+/* Koyu tema: ziyaretçi seçtiyse (data-theme="dark") ya da seçmediyse ve cihazı koyu moddaysa */
+:root { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #161412;
+  --fg: #eee9e1;
+  --muted: #9b948a;
+  --line: #2f2b27;
+  --card: #1e1b18;
+  --accent: #e8743b;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #161412;
     --fg: #eee9e1;
     --muted: #9b948a;
@@ -19,6 +31,14 @@
     --accent: #e8743b;
   }
 }
+/* Harita karoları koyu temada kısılır (yönetim panelindeki haritalara dokunulmaz) */
+:root[data-theme="dark"] .map:not(.admin-root *) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .map:not(.admin-root *) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92); }
+}
+.theme-toggle { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--card); color: var(--fg); cursor: pointer; }
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.site-header nav { align-items: center; }
 
 * { box-sizing: border-box; }
 html { background: var(--bg); }

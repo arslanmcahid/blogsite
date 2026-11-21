@@ -21,7 +21,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="tr" className={geistSans.variable}>
+    <html lang="tr" className={geistSans.variable} suppressHydrationWarning>
+      <head>
+        {/* Kayıtlı tema seçimini sayfa çizilmeden önce uygular (açılışta beyaz/koyu yanıp sönmeyi önler). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`,
+          }}
+        />
+      </head>
       <body>
         <TitleMarquee />
         {children}
