@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import type {
+  Category,
   Gallery,
   GallerySummary,
   HomeLayout,
   Location,
   Post,
   PostSummary,
+  Tag,
 } from "./types";
 
 // Sunucu tarafı (SSR) Django API adresi. Docker içinde "http://backend:8000" olur.
@@ -27,8 +29,15 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export const getHome = () => apiGet<HomeLayout>("/api/home/");
-export const getPosts = (location?: number) =>
-  apiGet<PostSummary[]>(`/api/posts/${location ? `?location=${location}` : ""}`);
+export const getPosts = (filter: { location?: number; category?: string; tag?: string } = {}) => {
+  const q = new URLSearchParams();
+  if (filter.location) q.set("location", String(filter.location));
+  if (filter.category) q.set("category", filter.category);
+  if (filter.tag) q.set("tag", filter.tag);
+  return apiGet<PostSummary[]>(`/api/posts/${q.size ? `?${q}` : ""}`);
+};
+export const getCategories = () => apiGet<Category[]>("/api/categories/");
+export const getTags = () => apiGet<Tag[]>("/api/tags/");
 export const getPost = (slug: string) =>
   apiGet<Post>(`/api/posts/${encodeURIComponent(slug)}/`);
 export const getGalleries = () => apiGet<GallerySummary[]>("/api/galleries/");

@@ -7,6 +7,8 @@ router = DefaultRouter()
 router.register("posts", views.PostViewSet, basename="post")
 router.register("galleries", views.GalleryViewSet, basename="gallery")
 router.register("locations", views.LocationViewSet, basename="location")
+router.register("categories", views.CategoryViewSet, basename="category")
+router.register("tags", views.TagViewSet, basename="tag")
 router.register("images", views.ImageViewSet, basename="image")
 
 urlpatterns = [

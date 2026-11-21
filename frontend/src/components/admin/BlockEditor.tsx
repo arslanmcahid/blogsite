@@ -1,10 +1,12 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Columns3, Image as ImageIcon, Images, MapPin, Plus, Quote, Trash2, Type, type LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Columns3, Image as ImageIcon, Images, MapPin, Plus, Quote, Trash2, Type, Video, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { errorMessage, uploadImage } from "@/lib/admin-api";
 import { BLOCK_INFO, makeBlock, type BlockType, type EBlock, type EInner } from "@/lib/editor-model";
 import type { Location } from "@/lib/types";
+import { youtubeId } from "@/lib/video";
+import { VideoEmbed } from "../VideoEmbed";
 import { DropZone } from "./DropZone";
 import { ImagePicker } from "./ImagePicker";
 import { RichText } from "./RichText";
@@ -16,7 +18,7 @@ export type EditorContext = {
   locations: Location[];
 };
 
-const ALL_TYPES: BlockType[] = ["text", "image", "quote", "columns", "gallery", "map"];
+const ALL_TYPES: BlockType[] = ["text", "image", "quote", "video", "columns", "gallery", "map"];
 
 const ICONS: Record<BlockType, LucideIcon> = {
   text: Type,
@@ -24,6 +26,7 @@ const ICONS: Record<BlockType, LucideIcon> = {
   quote: Quote,
   columns: Columns3,
   gallery: Images,
+  video: Video,
   map: MapPin,
 };
 
@@ -110,6 +113,18 @@ function BlockFields({ block, onChange, ctx }: { block: EInner; onChange: (b: EI
           </select>
         </label>
       );
+    case "video": {
+      const bad = block.url.trim() !== "" && !youtubeId(block.url);
+      return (
+        <div className="stack">
+          <label>YouTube bağlantısı
+            <input value={block.url} onChange={(e) => onChange({ ...block, url: e.target.value })} placeholder="https://www.youtube.com/watch?v=…" inputMode="url" />
+          </label>
+          {bad && <p className="admin-error">Bu bir YouTube bağlantısına benzemiyor. youtube.com veya youtu.be ile başlayan adresi yapıştır.</p>}
+          {!bad && block.url.trim() !== "" && <VideoEmbed url={block.url} />}
+        </div>
+      );
+    }
     case "map":
       return ctx.locations.length === 0 ? (
         <p className="muted small">Henüz konum eklemedin. Önce <a href="/admin/locations" target="_blank">Konumlar</a> sayfasından haritaya bir yer ekle.</p>

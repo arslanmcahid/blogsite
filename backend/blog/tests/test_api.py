@@ -184,3 +184,52 @@ def test_home_sections_accept_items_and_reject_bad_items(admin_client):
     assert ok.status_code == 200
     bad = admin_client.put("/api/home/", {"sections": [{"type": "latest_posts", "items": [1]}]}, format="json")
     assert bad.status_code == 400
+
+
+def test_category_tags_sources_info_and_filters(admin_client, anon):
+    cat = admin_client.post("/api/categories/", {"name": "Gezi"}, format="json").json()
+    tag = admin_client.post("/api/tags/", {"name": "Güneş"}, format="json").json()
+    assert cat["slug"] == "gezi" and tag["slug"] == "güneş"
+    body = {
+        "title": "Etiketli", "status": "published", "category": cat["id"], "tags": [tag["id"]],
+        "sources": [{"text": "Kaynak A", "url": "https://example.com"}, {"text": "Kaynak B"}],
+        "info": [{"label": "Süre", "value": "3 gün"}],
+    }
+    created = admin_client.post("/api/posts/", body, format="json")
+    assert created.status_code == 201, created.content
+    slug = created.json()["slug"]
+    detail = anon.get(f"/api/posts/{slug}/").json()
+    assert detail["category_detail"]["name"] == "Gezi"
+    assert detail["tag_details"][0]["name"] == "Güneş"
+    assert detail["info"][0]["value"] == "3 gün"
+    assert [p["slug"] for p in anon.get("/api/posts/?category=gezi").json()] == [slug]
+    assert [p["slug"] for p in anon.get("/api/posts/?tag=güneş").json()] == [slug]
+    assert anon.get("/api/posts/?tag=yok").json() == []
+    # ziyaretçi kategori/etiket oluşturamaz
+    assert anon.post("/api/tags/", {"name": "x"}, format="json").status_code in (401, 403)
+
+
+def test_related_posts_hide_drafts_from_visitors(admin_client, anon):
+    a = admin_client.post("/api/posts/", {"title": "A", "status": "published"}, format="json").json()
+    b = admin_client.post("/api/posts/", {"title": "B", "status": "published"}, format="json").json()
+    d = admin_client.post("/api/posts/", {"title": "Taslak"}, format="json").json()
+    admin_client.patch(f"/api/posts/{a['slug']}/", {"related": [b["id"], d["id"]]}, format="json")
+    assert [r["slug"] for r in anon.get(f"/api/posts/{a['slug']}/").json()["related_details"]] == [b["slug"]]
+    assert len(admin_client.get(f"/api/posts/{a['slug']}/").json()["related_details"]) == 2
+
+
+@pytest.mark.parametrize("bad", [
+    {"sources": [{"text": ""}]},
+    {"sources": [{"text": "x", "url": "javascript:alert(1)"}]},
+    {"info": [{"label": "a"}]},
+    {"blocks": [{"type": "video", "url": "https://evil.example.com/x"}]},
+])
+def test_rejects_invalid_new_fields(admin_client, bad):
+    r = admin_client.post("/api/posts/", {"title": "T", **bad}, format="json")
+    assert r.status_code == 400
+
+
+def test_accepts_youtube_video_block(admin_client):
+    for url in ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ"]:
+        r = admin_client.post("/api/posts/", {"title": "V", "blocks": [{"type": "video", "url": url}]}, format="json")
+        assert r.status_code == 201, r.content

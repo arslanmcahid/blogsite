@@ -3,9 +3,11 @@
 import { useMemo } from "react";
 import { useApi } from "@/lib/admin-api";
 import { formatDate } from "@/lib/format";
-import type { Block, Gallery, InnerBlock, Location, PostTheme } from "@/lib/types";
+import type { Block, Category, Gallery, InfoRow, InnerBlock, Location, PostTheme, RelatedPost, Source, Tag } from "@/lib/types";
 import { MapView } from "../MapView";
 import { Markdown } from "../Markdown";
+import { InfoCardView, PostMeta, RelatedView, SourcesView } from "../PostParts";
+import { VideoEmbed } from "../VideoEmbed";
 
 function PreviewMap({ id, locations }: { id: number; locations: Location[] }) {
   const selected = useMemo(() => locations.filter((l) => l.id === id), [locations, id]);
@@ -54,6 +56,8 @@ function Item({ block, locations }: { block: InnerBlock; locations: Location[] }
       );
     case "gallery":
       return <PreviewGallery slug={block.gallery} />;
+    case "video":
+      return <VideoEmbed url={block.url} />;
     case "map":
       return <PreviewMap id={block.location} locations={locations} />;
   }
@@ -61,7 +65,7 @@ function Item({ block, locations }: { block: InnerBlock; locations: Location[] }
 
 /** Yazının sitede görüneceği hâlin kabaca aynısı (aynı CSS sınıfları kullanılır). */
 export function PostPreview({
-  title, excerpt, coverUrl, publishedAt, blocks, theme, locations, postLocations,
+  title, excerpt, coverUrl, publishedAt, blocks, theme, locations, postLocations, category, tags, info, sources, related,
 }: {
   title: string;
   excerpt: string;
@@ -71,6 +75,11 @@ export function PostPreview({
   theme: PostTheme;
   locations: Location[];
   postLocations: Location[];
+  category: Category | null;
+  tags: Tag[];
+  info: InfoRow[];
+  sources: Source[];
+  related: RelatedPost[];
 }) {
   const { font = "serif", width = "normal", accent } = theme;
   return (
@@ -79,11 +88,13 @@ export function PostPreview({
         <time>{publishedAt ? formatDate(publishedAt) : "Yayın tarihi henüz yok"}</time>
         <h1>{title || "Başlıksız yazı"}</h1>
         {excerpt && <p className="lead">{excerpt}</p>}
+        <PostMeta category={category} tags={tags} newTab />
       </header>
       {coverUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="post-cover" src={coverUrl} alt="" />
       )}
+      <InfoCardView rows={info} />
       <div className="blocks">
         {blocks.length === 0 && <p className="muted">Yazına bölüm eklediğinde burada görünecek.</p>}
         {blocks.map((b, i) =>
@@ -100,6 +111,8 @@ export function PostPreview({
           ),
         )}
       </div>
+      <SourcesView sources={sources} />
+      <RelatedView posts={related} newTab />
       {postLocations.length > 0 && (
         <footer className="post-locations">
           <h2>Konumlar</h2>

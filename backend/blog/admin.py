@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Gallery, GalleryItem, HomeLayout, Image, Location, Post
+from .models import Category, Gallery, GalleryItem, HomeLayout, Image, Location, Post, Tag
 
 
 class GalleryItemInline(admin.TabularInline):
@@ -22,5 +22,9 @@ class GalleryAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Image)
-admin.site.register(Location)
+
 admin.site.register(HomeLayout)
+
+
+admin.site.register(Category)
+admin.site.register(Tag)

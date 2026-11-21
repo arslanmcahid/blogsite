@@ -26,6 +26,7 @@ function isEmptyInner(b: InnerBlock): boolean {
     case "image": return !b.src;
     case "quote": return b.text.trim() === "";
     case "gallery": return !b.gallery;
+    case "video": return !b.url.trim();
     case "map": return !b.location;
   }
 }
@@ -60,6 +61,7 @@ export const BLOCK_INFO: Record<BlockType, { label: string; hint: string }> = {
   quote: { label: "Alıntı", hint: "Öne çıkan bir söz" },
   columns: { label: "Gazete sütunları", hint: "Yan yana 2-4 sütun" },
   gallery: { label: "Fotoğraf sergisi", hint: "Hazırladığın bir sergiyi göm" },
+  video: { label: "Video", hint: "YouTube videosu göm" },
   map: { label: "Harita", hint: "Bir konumu haritada göster" },
 };
 
@@ -70,6 +72,7 @@ export function makeBlock(type: BlockType, defaults: { gallery?: string; locatio
     case "image": return { id, type, src: "", alt: "", caption: "" };
     case "quote": return { id, type, text: "", author: "" };
     case "gallery": return { id, type, gallery: defaults.gallery ?? "" };
+    case "video": return { id, type, url: "" };
     case "map": return { id, type, location: defaults.location ?? 0 };
     case "columns": return { id, type, columns: [[], []] };
   }

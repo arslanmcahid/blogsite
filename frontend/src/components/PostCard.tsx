@@ -15,6 +15,13 @@ export function PostCard({ post, featured = false }: { post: PostSummary; featur
         <time dateTime={post.published_at ?? undefined}>{formatDate(post.published_at)}</time>
         <h3><Link href={`/yazilar/${post.slug}`}>{post.title}</Link></h3>
         {post.excerpt && <p>{post.excerpt}</p>}
+        {(post.category_detail || post.tag_details.length > 0) && (
+          <p className="tags">
+            {post.category_detail && <strong>{post.category_detail.name}</strong>}
+            {post.category_detail && post.tag_details.length > 0 && " · "}
+            {post.tag_details.map((t) => `#${t.name}`).join(" ")}
+          </p>
+        )}
         {post.location_details.length > 0 && (
           <p className="tags">📍 {post.location_details.map((l) => l.name).join(", ")}</p>
         )}

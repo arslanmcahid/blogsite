@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 
-from .validators import validate_blocks, validate_home_sections, validate_theme
+from .validators import validate_blocks, validate_home_sections, validate_info, validate_sources, validate_theme
 
 
 class Image(models.Model):
@@ -54,6 +54,41 @@ class SluggedMixin(models.Model):
         return slug
 
 
+class Category(SluggedMixin):
+    """Yazı kategorisi (bir yazının tek kategorisi olur)."""
+
+    name = models.CharField(max_length=80, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "categories"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._make_slug(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(SluggedMixin):
+    """Serbest etiket (#güneş gibi); bir yazıya birden çok eklenebilir."""
+
+    name = models.CharField(max_length=60, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._make_slug(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
 class Post(SluggedMixin):
     class Status(models.TextChoices):
         DRAFT = "draft", "Taslak"
@@ -68,6 +103,13 @@ class Post(SluggedMixin):
     blocks = models.JSONField(default=list, blank=True, validators=[validate_blocks])
     theme = models.JSONField(default=dict, blank=True, validators=[validate_theme])
     locations = models.ManyToManyField(Location, blank=True, related_name="posts")
+    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="posts")
+    tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
+    # Kaynakça ve "bilgi kartı" (etiket: değer satırları) yazıya özgü küçük listelerdir, JSON yeterli.
+    sources = models.JSONField(default=list, blank=True, validators=[validate_sources])
+    info = models.JSONField(default=list, blank=True, validators=[validate_info])
+    # "Bunları da oku": elle seçilen ilgili yazılar (tek yönlü).
+    related = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="related_from")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

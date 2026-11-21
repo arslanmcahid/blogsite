@@ -9,6 +9,7 @@ Bir yazının içeriği `Post.blocks` alanında sıralı bir JSON listesi olarak
       {"type": "columns", "columns": [[<blok>, ...], [<blok>, ...]]},   # gazete düzeni
       {"type": "quote", "text": "...", "author": "..."},
       {"type": "gallery", "gallery": "sergi-slug"},
+      {"type": "video", "url": "https://www.youtube.com/watch?v=..."},
       {"type": "map", "location": 3}
     ]
 
@@ -18,7 +19,12 @@ Veritabanı bu iç yapıyı denetlemez, o yüzden burada kendimiz doğruluyoruz.
 Aynı şema frontend'de TypeScript tipleri olarak da tanımlanacak.
 """
 
+import re
+
 from django.core.exceptions import ValidationError
+
+# youtube.com/watch?v=…, youtu.be/…, youtube.com/embed/… ve shorts adresleri
+YOUTUBE_RE = re.compile(r"^https?://(www\.|m\.)?(youtube\.com/(watch\?(.*&)?v=|embed/|shorts/)|youtu\.be/)[\w-]{11}([&?#].*)?$")
 
 MAX_BLOCKS = 200
 MAX_COLUMNS = 4
@@ -50,6 +56,10 @@ def _validate_block(block, where: str, *, nested: bool) -> None:
         _require_str(block, "author", where, required=False)
     elif kind == "gallery":
         _require_str(block, "gallery", where)
+    elif kind == "video":
+        _require_str(block, "url", where)
+        if not YOUTUBE_RE.match(block["url"].strip()):
+            raise ValidationError(f"{where}: video adresi bir YouTube bağlantısı olmalı.")
     elif kind == "map":
         if not isinstance(block.get("location"), int):
             raise ValidationError(f"{where}: 'location' bir konum id'si (sayı) olmalı.")
@@ -104,3 +114,28 @@ def validate_theme(value) -> None:
     """Yazı tasarım ayarları (serbest anahtar-değer, ama nesne olmalı)."""
     if not isinstance(value, dict):
         raise ValidationError("Tema bir nesne olmalı.")
+
+
+def validate_sources(value) -> None:
+    """Kaynakça: [{"text": "Yazar (2026). Başlık.", "url": "https://..."}] (url isteğe bağlı)."""
+    if not isinstance(value, list) or len(value) > 50:
+        raise ValidationError("Kaynakça en fazla 50 kaynaklık bir liste olmalı.")
+    for i, src in enumerate(value):
+        if not isinstance(src, dict) or not isinstance(src.get("text"), str) or not src["text"].strip():
+            raise ValidationError(f"kaynak[{i}]: 'text' dolu bir metin olmalı.")
+        if len(src["text"]) > 500:
+            raise ValidationError(f"kaynak[{i}]: metin en fazla 500 karakter olabilir.")
+        url = src.get("url")
+        if url not in (None, "") and not (isinstance(url, str) and re.match(r"^https?://", url)):
+            raise ValidationError(f"kaynak[{i}]: 'url' http:// veya https:// ile başlamalı.")
+
+
+def validate_info(value) -> None:
+    """Bilgi kartı: [{"label": "Süre", "value": "3 gün"}]"""
+    if not isinstance(value, list) or len(value) > 20:
+        raise ValidationError("Bilgi kartı en fazla 20 satırlık bir liste olmalı.")
+    for i, row in enumerate(value):
+        if not isinstance(row, dict) or not isinstance(row.get("label"), str) or not isinstance(row.get("value"), str):
+            raise ValidationError(f"satır[{i}]: 'label' ve 'value' metin olmalı.")
+        if len(row["label"]) > 80 or len(row["value"]) > 300:
+            raise ValidationError(f"satır[{i}]: metin çok uzun.")

@@ -1,7 +1,9 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import Gallery, GalleryItem, HomeLayout, Image, Location, Post
+from django.utils import timezone
+
+from .models import Category, Gallery, GalleryItem, HomeLayout, Image, Location, Post, Tag
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -21,16 +23,46 @@ class LocationSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "latitude", "longitude"]
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug"]
+        read_only_fields = ["slug"]
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name", "slug"]
+        read_only_fields = ["slug"]
+
+
 class PostSerializer(serializers.ModelSerializer):
     # Yazma: `cover` ve `locations` id olarak gelir. Okuma için ayrıca zengin alanlar var.
     cover_url = serializers.CharField(source="cover.file.url", read_only=True, default=None)
     location_details = LocationSerializer(source="locations", many=True, read_only=True)
+    category_detail = CategorySerializer(source="category", read_only=True)
+    tag_details = TagSerializer(source="tags", many=True, read_only=True)
+    related_details = serializers.SerializerMethodField()
+
+    def get_related_details(self, obj):
+        # Ziyaretçiye sadece yayında olan ilgili yazılar gösterilir.
+        qs = obj.related.select_related("cover")
+        request = self.context.get("request")
+        if not (request and request.user.is_authenticated and request.user.is_staff):
+            qs = qs.filter(status=Post.Status.PUBLISHED, published_at__lte=timezone.now())
+        return [
+            {"id": p.id, "slug": p.slug, "title": p.title, "cover_url": p.cover.file.url if p.cover else None}
+            for p in qs
+        ]
 
     class Meta:
         model = Post
         fields = [
             "id", "slug", "title", "excerpt", "cover", "cover_url", "status",
             "published_at", "blocks", "theme", "locations", "location_details",
+            "category", "category_detail", "tags", "tag_details",
+            "sources", "info", "related", "related_details",
             "created_at", "updated_at",
         ]
         read_only_fields = ["slug", "created_at", "updated_at"]
@@ -41,7 +73,10 @@ class PostListSerializer(PostSerializer):
     """Liste görünümünde ağır `blocks` alanı gönderilmez."""
 
     class Meta(PostSerializer.Meta):
-        fields = [f for f in PostSerializer.Meta.fields if f not in ("blocks", "theme")]
+        fields = [
+            f for f in PostSerializer.Meta.fields
+            if f not in ("blocks", "theme", "sources", "info", "related", "related_details")
+        ]
 
 
 class GalleryItemSerializer(serializers.ModelSerializer):

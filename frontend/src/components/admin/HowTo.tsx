@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, FileText, Images, LayoutTemplate, MapPin, Rocket, X, type LucideIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Images, LayoutTemplate, MapPin, Rocket, Tags, X, type LucideIcon } from "lucide-react";
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 
 const KEY = "blog-admin-howto-hidden";
@@ -46,12 +46,22 @@ const STEPS: { icon: LucideIcon; title: string; lines: string[] }[] = [
     lines: [
       "Yazının içine metnin yanında resim, alıntı, fotoğraf sergisi, harita ve gazete gibi 2-4 sütunlu bölümler ekleyebilirsin. Üstteki “Ekle” düğmelerinden seç.",
       "Resmi sürükleyip bırakabilir ya da bilgisayarından seçebilirsin. Bölümleri tutacağından (⠿) sürükleyerek ya da ↑ ↓ düğmeleriyle sıralarsın.",
+      "Video bölümüne bir YouTube bağlantısı yapıştırman yeterli. Metin kutusunda başlık/liste/alıntı seçimi için “Paragraf” menüsünü, üstü çizili ve tablo için üstteki düğmeleri kullan.",
       "“Önizleme” sekmesi, yazının sitede nasıl görüneceğini kaydetmeden gösterir. Sağdaki “Görünüm” kartı yazı tipini ve genişliğini değiştirir.",
     ],
   },
   {
+    icon: Tags,
+    title: "3. Kategori, etiket, kaynakça",
+    lines: [
+      "Sağdaki kartlardan yazına bir kategori seç (listede yoksa altına yazıp ekle) ve istediğin kadar etiket ekle. Ziyaretçiler bunlara tıklayıp aynı konudaki yazıları görür.",
+      "Sayfanın altındaki “Bilgi kartı” yazının başında küçük bir künye olarak görünür (Süre: 3 gün gibi). “Kaynakça” yazının sonunda listelenir. “İlgili yazılar” ise okuyucuya “Bunları da oku” diye önerdiğin yazılardır.",
+      "Boş bıraktığın satırlar kaydedilmez, bu yüzden hiçbirini doldurmak zorunda değilsin.",
+    ],
+  },
+  {
     icon: Images,
-    title: "3. Fotoğraf sergileri ve konumlar",
+    title: "4. Fotoğraf sergileri ve konumlar",
     lines: [
       "Fotoğraf sergileri → Yeni sergi: fotoğrafları kutuya sürükle, sırala, istersen her birine alt yazı ekle. Yayında olan sergiler sitede “Sergiler” sayfasında görünür.",
       "Konumlar: haritaya tıklayarak bir yer ekle. Sonra yazılara “Konumlar” kartından etiketle. Etiketli yerler sitedeki haritada belirir.",
@@ -59,7 +69,7 @@ const STEPS: { icon: LucideIcon; title: string; lines: string[] }[] = [
   },
   {
     icon: MapPin,
-    title: "4. Ana sayfayı düzenlemek",
+    title: "5. Ana sayfayı düzenlemek",
     lines: [
       "Ana sayfa düzeni: ziyaretçilerin göreceği sayfayı burada olduğu gibi görürsün. Üstteki düğmelerle yeni bölüm ekle.",
       "Her bölümün sağ üstünden taşıyabilir, düzenleyebilir ya da kaldırabilirsin. Kartların da kendi düğmeleri var: sürükle, başka bir yazıyla değiştir ya da çıkar.",

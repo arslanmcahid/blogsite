@@ -6,6 +6,7 @@ export type InnerBlock =
   | { type: "image"; src: string; alt?: string; caption?: string }
   | { type: "quote"; text: string; author?: string }
   | { type: "gallery"; gallery: string }
+  | { type: "video"; url: string }
   | { type: "map"; location: number };
 
 export type Block =
@@ -19,6 +20,12 @@ export type Location = {
   longitude: string;
 };
 
+export type Category = { id: number; name: string; slug: string };
+export type Tag = { id: number; name: string; slug: string };
+export type Source = { text: string; url?: string };
+export type InfoRow = { label: string; value: string };
+export type RelatedPost = { id: number; slug: string; title: string; cover_url: string | null };
+
 export type PostSummary = {
   id: number;
   slug: string;
@@ -30,6 +37,10 @@ export type PostSummary = {
   published_at: string | null;
   updated_at: string;
   location_details: Location[];
+  category: number | null;
+  category_detail: Category | null;
+  tags: number[];
+  tag_details: Tag[];
 };
 
 export type PostTheme = {
@@ -39,7 +50,14 @@ export type PostTheme = {
   accent?: string;
 };
 
-export type Post = PostSummary & { blocks: Block[]; theme: PostTheme };
+export type Post = PostSummary & {
+  blocks: Block[];
+  theme: PostTheme;
+  sources: Source[];
+  info: InfoRow[];
+  related: number[];
+  related_details: RelatedPost[];
+};
 
 export type GalleryItem = {
   id: number;

@@ -8,14 +8,16 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Gallery, HomeLayout, Image, Location, Post
+from .models import Category, Gallery, HomeLayout, Image, Location, Post, Tag
 from .serializers import (
+    CategorySerializer,
     GallerySerializer,
     HomeLayoutSerializer,
     ImageSerializer,
     LocationSerializer,
     PostListSerializer,
     PostSerializer,
+    TagSerializer,
 )
 
 
@@ -43,12 +45,16 @@ class PostViewSet(viewsets.ModelViewSet):
     lookup_value_regex = "[^/]+"  # unicode slug'lar için
 
     def get_queryset(self):
-        qs = Post.objects.select_related("cover").prefetch_related("locations")
+        qs = Post.objects.select_related("cover", "category").prefetch_related("locations", "tags")
         if not is_staff(self.request):
             # Ziyaretçi sadece yayınlanmış ve tarihi gelmiş yazıları görür.
             qs = qs.filter(status=Post.Status.PUBLISHED, published_at__lte=timezone.now())
         if loc := self.request.query_params.get("location"):
             qs = qs.filter(locations__id=loc)
+        if cat := self.request.query_params.get("category"):
+            qs = qs.filter(category__slug=cat)
+        if tag := self.request.query_params.get("tag"):
+            qs = qs.filter(tags__slug=tag)
         return qs
 
     def get_serializer_class(self):
@@ -72,6 +78,18 @@ class LocationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
     serializer_class = LocationSerializer
     queryset = Location.objects.all()
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStaffOrReadOnly]
+    serializer_class = CategorySerializer
+    queryset = Category.objects.all()
+
+
+class TagViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStaffOrReadOnly]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
 
 
 class ImageViewSet(viewsets.ModelViewSet):

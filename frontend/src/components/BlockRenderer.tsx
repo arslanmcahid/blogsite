@@ -3,6 +3,7 @@ import { getGalleryOrNull, getLocations } from "@/lib/api";
 import type { Block, InnerBlock } from "@/lib/types";
 import { GalleryGrid } from "./GalleryGrid";
 import { MapView } from "./MapView";
+import { VideoEmbed } from "./VideoEmbed";
 import { Markdown } from "./Markdown";
 
 async function BlockItem({ block }: { block: InnerBlock }) {
@@ -34,6 +35,8 @@ async function BlockItem({ block }: { block: InnerBlock }) {
         </section>
       );
     }
+    case "video":
+      return <VideoEmbed url={block.url} />;
     case "map": {
       const locations = (await getLocations()).filter((l) => l.id === block.location);
       return <MapView locations={locations} />;

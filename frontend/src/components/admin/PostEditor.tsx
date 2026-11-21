@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { adminFetch, errorMessage, useApi } from "@/lib/admin-api";
 import { type EBlock, TEMPLATES, toApi, toEditor } from "@/lib/editor-model";
-import type { AdminImage, GallerySummary, Location, Post, PostTheme } from "@/lib/types";
+import type { AdminImage, Category, GallerySummary, InfoRow, Location, Post, PostSummary, PostTheme, Source, Tag } from "@/lib/types";
 import { BlockEditor } from "./BlockEditor";
 import { ImagePicker } from "./ImagePicker";
+import { CategoryCard, InfoCard, RelatedCard, SourcesCard, TagsCard } from "./PostExtras";
 import { PostPreview } from "./PostPreview";
 import { ThemePicker } from "./ThemePicker";
 import { useToast } from "./Toast";
@@ -24,6 +25,11 @@ type Draft = {
   blocks: EBlock[];
   theme: PostTheme;
   locIds: number[];
+  categoryId: number | null;
+  tagIds: number[];
+  sources: Source[];
+  info: InfoRow[];
+  relatedIds: number[];
   publishedAt: string; // datetime-local biçimi
 };
 
@@ -43,6 +49,11 @@ function draftFromPost(post: Post | null): Draft {
     blocks: toEditor(post?.blocks ?? []),
     theme: post?.theme ?? {},
     locIds: post?.location_details.map((l) => l.id) ?? [],
+    categoryId: post?.category ?? null,
+    tagIds: post?.tags ?? [],
+    sources: post?.sources ?? [],
+    info: post?.info ?? [],
+    relatedIds: post?.related ?? [],
     publishedAt: toLocalInput(post?.published_at ?? null),
   };
 }
@@ -57,13 +68,30 @@ function payloadOf(d: Draft) {
     blocks: toApi(d.blocks),
     theme: d.theme,
     locations: d.locIds,
+    category: d.categoryId,
+    tags: d.tagIds,
+    // Boş bırakılan satırlar kaydedilmez.
+    sources: d.sources
+      .filter((s) => s.text.trim())
+      .map((s) => ({ text: s.text.trim(), ...(s.url?.trim() ? { url: s.url.trim() } : {}) })),
+    info: d.info.filter((r) => r.label.trim() && r.value.trim()).map((r) => ({ label: r.label.trim(), value: r.value.trim() })),
+    related: d.relatedIds,
     published_at: d.publishedAt ? new Date(d.publishedAt).toISOString() : null,
   };
 }
 
 const snapshotOf = (d: Draft) => JSON.stringify(payloadOf(d));
 
-function PostForm({ post, locations, galleries }: { post: Post | null; locations: Location[]; galleries: GallerySummary[] }) {
+function PostForm({ post, locations, galleries, allPosts, initialCategories, initialTags }: {
+  post: Post | null;
+  locations: Location[];
+  galleries: GallerySummary[];
+  allPosts: PostSummary[];
+  initialCategories: Category[];
+  initialTags: Tag[];
+}) {
+  const [categories, setCategories] = useState(initialCategories);
+  const [tags, setTags] = useState(initialTags);
   const router = useRouter();
   const toast = useToast();
 
@@ -183,6 +211,11 @@ function PostForm({ post, locations, galleries }: { post: Post | null; locations
             theme={deferred.theme}
             locations={locations}
             postLocations={previewLocations}
+            category={categories.find((c) => c.id === deferred.categoryId) ?? null}
+            tags={deferred.tagIds.flatMap((id) => tags.filter((t) => t.id === id))}
+            info={deferred.info.filter((r) => r.label.trim() && r.value.trim())}
+            sources={deferred.sources.filter((s) => s.text.trim())}
+            related={deferred.relatedIds.flatMap((id) => allPosts.filter((p) => p.id === id)).map((p) => ({ id: p.id, slug: p.slug, title: p.title, cover_url: p.cover_url }))}
           />
         </div>
       ) : (
@@ -214,6 +247,10 @@ function PostForm({ post, locations, galleries }: { post: Post | null; locations
               </div>
               <BlockEditor value={draft.blocks} onChange={(blocks) => update({ blocks })} ctx={ctx} />
             </div>
+
+            <InfoCard value={draft.info} onChange={(info) => update({ info })} />
+            <SourcesCard value={draft.sources} onChange={(sources) => update({ sources })} />
+            <RelatedCard posts={allPosts} currentId={post?.id ?? null} value={draft.relatedIds} onChange={(relatedIds) => update({ relatedIds })} />
           </div>
 
           <aside className="form-side" aria-label="Yazı ayarları">
@@ -247,6 +284,9 @@ function PostForm({ post, locations, galleries }: { post: Post | null; locations
                 {draft.cover && <button type="button" className="btn" onClick={() => update({ cover: null })}>Kaldır</button>}
               </div>
             </div>
+
+            <CategoryCard categories={categories} value={draft.categoryId} onChange={(categoryId) => update({ categoryId })} onCreated={(c) => setCategories((l) => [...l, c].sort((a, b) => a.name.localeCompare(b.name, "tr")))} />
+            <TagsCard tags={tags} value={draft.tagIds} onChange={(tagIds) => update({ tagIds })} onCreated={(t) => setTags((l) => [...l, t].sort((a, b) => a.name.localeCompare(b.name, "tr")))} />
 
             <div className="card stack">
               <h2>Konumlar</h2>
@@ -287,10 +327,13 @@ export function PostEditor({ slug }: { slug?: string }) {
   const post = useApi<Post>(slug ? `/api/posts/${encodeURIComponent(slug)}/` : null);
   const locs = useApi<Location[]>("/api/locations/");
   const gals = useApi<GallerySummary[]>("/api/galleries/");
+  const all = useApi<PostSummary[]>("/api/posts/");
+  const cats = useApi<Category[]>("/api/categories/");
+  const tgs = useApi<Tag[]>("/api/tags/");
 
-  const error = post.error ?? locs.error ?? gals.error;
+  const error = post.error ?? locs.error ?? gals.error ?? all.error ?? cats.error ?? tgs.error;
   if (error) return <p className="admin-error">{error.message}</p>;
-  if ((slug && !post.data) || !locs.data || !gals.data) return <p className="muted">Yükleniyor…</p>;
+  if ((slug && !post.data) || !locs.data || !gals.data || !all.data || !cats.data || !tgs.data) return <p className="muted">Yükleniyor…</p>;
   // key: farklı yazıya geçildiğinde form durumu sıfırlansın
-  return <PostForm key={slug ?? "new"} post={post.data ?? null} locations={locs.data} galleries={gals.data} />;
+  return <PostForm key={slug ?? "new"} post={post.data ?? null} locations={locs.data} galleries={gals.data} allPosts={all.data} initialCategories={cats.data} initialTags={tgs.data} />;
 }
