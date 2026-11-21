@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText, Globe, Images, LayoutDashboard, LogOut, MapPin, Navigation } from "lucide-react";
+import { CircleHelp, FileText, Globe, Images, LayoutDashboard, LogOut, MapPin, Navigation } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { adminFetch, ApiError, useApi } from "@/lib/admin-api";
+import { HowTo, type HowToHandle } from "./HowTo";
 import { ToastProvider } from "./Toast";
 
 const NAV = [
@@ -35,6 +36,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: me, error } = useApi<{ username: string }>("/api/auth/me/");
+  const howto = useRef<HowToHandle>(null);
 
   useEffect(() => {
     if (error instanceof ApiError && error.status === 401) router.replace("/admin/login");
@@ -61,6 +63,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
+        <button type="button" className="nav-item" onClick={() => howto.current?.open()}><CircleHelp size={16} aria-hidden /> Nasıl kullanılır?</button>
         <Link href="/" target="_blank" className="nav-item"><Globe size={16} aria-hidden /> Siteyi aç</Link>
         <button type="button" className="nav-item" onClick={logout}><LogOut size={16} aria-hidden /> Çıkış yap</button>
       </aside>
@@ -75,9 +78,11 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
               <Icon size={16} aria-hidden /> {label}
             </Link>
           ))}
+          <button type="button" className="nav-item" onClick={() => howto.current?.open()}><CircleHelp size={16} aria-hidden /> Yardım</button>
           <button type="button" className="nav-item" onClick={logout}><LogOut size={16} aria-hidden /> Çıkış</button>
         </nav>
         <main className="content"><ToastProvider>{children}</ToastProvider></main>
+        <HowTo handle={howto} />
       </div>
     </div>
   );

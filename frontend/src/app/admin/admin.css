@@ -345,3 +345,14 @@
 .hp-dialog .btn.primary { background: var(--hp-ink, #2f4b43); border-color: var(--hp-ink, #2f4b43); }
 .hp-dialog label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
 .hp-card:not(:has(.hp-cover)) .hp-card-body { padding-top: 48px; }
+
+/* Nasıl kullanılır turu */
+.howto { width: min(560px, calc(100vw - 32px)); }
+.howto-body { min-height: 190px; }
+.howto-body p { margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: var(--a-sub); }
+.howto-dots { display: flex; justify-content: center; gap: 6px; }
+.howto-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--a-line); }
+.howto-dots span.on { background: var(--a-dark); }
+.howto-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.howto-foot .btn.primary { background: var(--a-dark); border-color: var(--a-dark); }
+.howto-check { flex-direction: row !important; align-items: center; gap: 8px !important; font-weight: 500 !important; cursor: pointer; }
