@@ -27,6 +27,12 @@ const FIELD_NAMES: Record<string, string> = {
   file: "Dosya",
   items: "Fotoğraflar",
   sections: "Bölümler",
+  placements: "Reklam yerleri",
+  link_url: "Bağlantı",
+  image: "Görsel",
+  weight: "Ağırlık",
+  starts_on: "Başlangıç tarihi",
+  ends_on: "Bitiş tarihi",
 };
 
 const KNOWN_MESSAGES: [RegExp, string][] = [
@@ -34,6 +40,7 @@ const KNOWN_MESSAGES: [RegExp, string][] = [
   [/this field is required|bu alan zorunlu/i, "zorunludur"],
   [/ensure this field has no more than (\d+)/i, "çok uzun (en fazla $1 karakter)"],
   [/upload a valid image/i, "geçerli bir resim değil"],
+  [/Yerleşimler şunlardan olmalı.*/i, "güncel olmayan bir yer seçili. Sayfayı yenileyip yerleri yeniden seç."],
 ];
 
 function softenMessage(msg: string): string {

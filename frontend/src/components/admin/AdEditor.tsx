@@ -33,7 +33,7 @@ const blank: Draft = { name: "", kind: "banner", image: null, title: "", body: "
 
 const fromAd = (a: Ad): Draft => ({
   name: a.name, kind: a.kind, image: a.image && a.image_url ? { id: a.image, url: a.image_url, w: a.image_width, h: a.image_height, autoX: a.auto_focus_x ?? 50, autoY: a.auto_focus_y ?? 50 } : null,
-  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements, weight: a.weight, format: a.format, focus: a.focus_x !== null && a.focus_y !== null ? { x: a.focus_x, y: a.focus_y } : null, is_active: a.is_active,
+  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements.filter((p) => AD_PLACEMENTS.some((x) => x.id === p)), weight: a.weight, format: a.format, focus: a.focus_x !== null && a.focus_y !== null ? { x: a.focus_x, y: a.focus_y } : null, is_active: a.is_active,
   starts_on: a.starts_on ?? "", ends_on: a.ends_on ?? "",
 });
 
