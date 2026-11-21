@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { PostCard } from "@/components/PostCard";
 import { getCategories, getPosts, getTags } from "@/lib/api";
 
-export const metadata: Metadata = { title: "Yazılar" };
+export const metadata: Metadata = { title: "Köşe Yazıları" };
 
 type Search = { kategori?: string; etiket?: string };
 
@@ -45,7 +45,7 @@ async function List({ searchParams }: { searchParams: Promise<Search> }) {
 export default function PostsPage({ searchParams }: { searchParams: Promise<Search> }) {
   return (
     <main id="main" className="container">
-      <h1>Yazılar</h1>
+      <h1>Köşe Yazıları</h1>
       <Suspense fallback={<p className="muted">Yükleniyor…</p>}><List searchParams={searchParams} /></Suspense>
     </main>
   );

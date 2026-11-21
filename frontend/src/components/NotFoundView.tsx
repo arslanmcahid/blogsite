@@ -18,7 +18,7 @@ export async function NotFoundView() {
         <p className="lead">Aradığın sayfa taşınmış, silinmiş ya da adres yanlış yazılmış olabilir. Ama okunacak başka yazılar var.</p>
         <p className="nf-actions">
           <Link href="/" className="btn">Ana sayfaya dön</Link>
-          <Link href="/yazilar" className="btn">Tüm yazılar</Link>
+          <Link href="/yazilar" className="btn">Tüm köşe yazıları</Link>
         </p>
       </div>
       {latest.length > 0 && (

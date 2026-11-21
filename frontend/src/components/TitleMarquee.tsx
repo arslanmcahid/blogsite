@@ -6,7 +6,7 @@ import { HOME_TITLE } from "@/lib/site";
 
 // Boşluklar bölünmeyen boşluktur (NBSP): tarayıcı sıradan boşlukları sekme başlığında tek boşluğa indirir.
 const SEPARATOR = "   •   ";
-const STEP_MS = 140; // bir harf kayma süresi: harfler bu kadar sık kayınca göz akıcı bir kayma görür
+const STEP_MS = 100; // bir harf kayma süresi (saniyede 10 harf)
 const HOLD_MS = 4000; // tam başlık her turdan sonra bu kadar sabit durur
 
 /**
