@@ -1,14 +1,11 @@
 # Blog için Caddy ayarı (yazdedik.com). Mevcut Caddyfile'ın SONUNA ekle, sonra:
-#   docker exec <caddy-konteyneri> caddy reload --config /etc/caddy/Caddyfile
+#   docker exec travel-blog-caddy-1 caddy validate --config /etc/caddy/Caddyfile
+#   docker exec travel-blog-caddy-1 caddy reload --config /etc/caddy/Caddyfile
 
 # www → ana adrese yönlendirme (Cloudflare DNS'te www CNAME kaydı olmalı)
 www.yazdedik.com {
 	redir https://yazdedik.com{uri} permanent
 }
-
-yazdedik.com {
-# 	redir https://ALANADI{uri} permanent
-# }
 
 yazdedik.com {
 	encode gzip zstd
