@@ -58,7 +58,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
         <Link href="/admin" className="brand"><MapPin size={20} aria-hidden /> Blog yönetimi</Link>
         <nav aria-label="Yönetim menüsü">
           {NAV.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={`nav-item ${isActive(pathname, href) ? "active" : ""}`} aria-current={isActive(pathname, href) ? "page" : undefined}>
+            <Link key={href} href={href} data-tour={`nav-${href.split("/").pop() || "panel"}`} className={`nav-item ${isActive(pathname, href) ? "active" : ""}`} aria-current={isActive(pathname, href) ? "page" : undefined}>
               <Icon size={16} aria-hidden /> {label}
             </Link>
           ))}
@@ -74,7 +74,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
         </header>
         <nav className="mobile-nav" aria-label="Yönetim menüsü (mobil)">
           {NAV.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={`nav-item ${isActive(pathname, href) ? "active" : ""}`}>
+            <Link key={href} href={href} data-tour={`nav-${href.split("/").pop() || "panel"}`} className={`nav-item ${isActive(pathname, href) ? "active" : ""}`}>
               <Icon size={16} aria-hidden /> {label}
             </Link>
           ))}

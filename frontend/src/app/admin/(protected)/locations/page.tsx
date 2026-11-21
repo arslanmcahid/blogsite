@@ -53,7 +53,7 @@ export default function LocationsAdminPage() {
   return (
     <div className="form-grid">
       <div className="form-main">
-        <div className="card stack">
+        <div className="card stack" data-tour="loc-add">
           <h2>Haritaya yeni bir yer ekle</h2>
           <p className="muted small" style={{ margin: 0 }}>Haritada yerin üzerine tıkla, ona bir ad ver ve “Ekle”ye bas. Konumları yazılarında etiket olarak kullanabilirsin.</p>
           <LocationPickerMap locations={data ?? []} pending={point} onPick={setPoint} />

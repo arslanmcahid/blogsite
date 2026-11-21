@@ -52,7 +52,7 @@ export default function GalleriesAdminPage() {
           <option value="published">Yayında</option>
           <option value="draft">Taslak</option>
         </select>
-        <Link href="/admin/galleries/new" className="btn primary" style={{ marginLeft: "auto" }}>Yeni sergi</Link>
+        <Link href="/admin/galleries/new" data-tour="new-gallery" className="btn primary" style={{ marginLeft: "auto" }}>Yeni sergi</Link>
       </div>
       {error && <p className="admin-error">{error.message}</p>}
       {loading && <p className="muted">Yükleniyor…</p>}

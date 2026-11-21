@@ -221,7 +221,7 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
       ) : (
         <div className="form-grid">
           <div className="form-main">
-            <div className="card stack">
+            <div className="card stack" data-tour="post-title">
               <label>Başlık *
                 <input value={draft.title} onChange={(e) => update({ title: e.target.value })} placeholder="Yazının başlığı" maxLength={200} className="title-input" />
               </label>
@@ -230,7 +230,7 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
               </label>
             </div>
 
-            <div className="card stack">
+            <div className="card stack" data-tour="post-content">
               <div className="row">
                 <h2>İçerik</h2>
                 <span className="spacer" />
@@ -254,7 +254,7 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
           </div>
 
           <aside className="form-side" aria-label="Yazı ayarları">
-            <div className="card stack">
+            <div className="card stack" data-tour="post-status">
               <h2>Yayın</h2>
               <label>Durum
                 <select value={draft.status} onChange={(e) => update({ status: e.target.value as Status })}>
@@ -285,8 +285,10 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
               </div>
             </div>
 
+            <div data-tour="post-taxonomy" className="stack" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <CategoryCard categories={categories} value={draft.categoryId} onChange={(categoryId) => update({ categoryId })} onCreated={(c) => setCategories((l) => [...l, c].sort((a, b) => a.name.localeCompare(b.name, "tr")))} />
             <TagsCard tags={tags} value={draft.tagIds} onChange={(tagIds) => update({ tagIds })} onCreated={(t) => setTags((l) => [...l, t].sort((a, b) => a.name.localeCompare(b.name, "tr")))} />
+            </div>
 
             <div className="card stack">
               <h2>Konumlar</h2>

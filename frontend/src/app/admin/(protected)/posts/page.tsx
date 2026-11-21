@@ -51,7 +51,7 @@ export default function PostsAdminPage() {
           <option value="published">Yayında</option>
           <option value="draft">Taslak</option>
         </select>
-        <Link href="/admin/posts/new" className="btn primary" style={{ marginLeft: "auto" }}>Yeni yazı</Link>
+        <Link href="/admin/posts/new" data-tour="new-post" className="btn primary" style={{ marginLeft: "auto" }}>Yeni yazı</Link>
       </div>
       {error && <p className="admin-error">{error.message}</p>}
       {loading && <p className="muted">Yükleniyor…</p>}

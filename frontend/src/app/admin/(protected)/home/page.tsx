@@ -339,7 +339,7 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
         <button className="btn primary" onClick={save} disabled={busy}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
       </div>
 
-      <div className="hp-add" role="group" aria-label="Bölüm ekle">
+      <div className="hp-add" data-tour="home-add" role="group" aria-label="Bölüm ekle">
         <span className="hp-add-label"><Plus size={14} aria-hidden /> Bölüm ekle</span>
         {(Object.keys(INFO) as Kind[]).map((t) => {
           const Icon = INFO[t].icon;
@@ -356,7 +356,7 @@ function HomeForm({ initial, data }: { initial: HomeSection[]; data: Data }) {
           const auto = ITEM_KINDS.includes(s.type) && !s.items;
           const heading = s.title || defaultTitle[s.type];
           return (
-            <section id={`hp-${s.id}`} className={`hp-frame ${dragging ? "dragging" : ""}`}>
+            <section id={`hp-${s.id}`} data-tour="home-frame" className={`hp-frame ${dragging ? "dragging" : ""}`}>
               <div className="hp-frame-head">
                 <div className="hp-titlewrap">
                   {heading ? <h3 className="hp-title">{heading}</h3> : <span className="hp-title muted">{INFO[s.type].label}</span>}
