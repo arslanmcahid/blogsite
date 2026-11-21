@@ -2,13 +2,21 @@
 
 import { MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { adminFetch, errorMessage } from "@/lib/admin-api";
+import { useEffect, useState } from "react";
+import { adminFetch, errorMessage, useApi } from "@/lib/admin-api";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Zaten giriş yapılmışsa giriş sayfası gösterilmez, doğrudan panele geçilir.
+  const me = useApi<{ username: string }>("/api/auth/me/");
+  useEffect(() => {
+    if (me.data) router.replace("/admin");
+  }, [me.data, router]);
+  // Kontrol bitene kadar (ya da yönlendirilirken) form hiç çizilmez, böylece yanıp sönmez.
+  if (me.loading || me.data) return <main className="login"><p className="muted">Yükleniyor…</p></main>;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
