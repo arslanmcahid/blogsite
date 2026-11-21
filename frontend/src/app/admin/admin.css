@@ -416,3 +416,15 @@
 .focus-pick button { position: relative; display: block; padding: 0; border: 1px solid var(--a-input); border-radius: 10px; overflow: hidden; cursor: crosshair; width: 100%; background: none; }
 .focus-pick img { display: block; width: 100%; height: auto; }
 .focus-dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff; background: var(--a-dark); box-shadow: 0 0 0 2px var(--a-dark), 0 2px 8px rgba(0,0,0,.4); pointer-events: none; }
+
+/* Afiş kırpması: görsel üzerinde kırpılan alanlar */
+.crop-figure { position: relative; border: 1px solid var(--a-input); border-radius: 10px; overflow: hidden; line-height: 0; }
+.crop-figure img { width: 100%; height: auto; display: block; }
+.crop-box { position: absolute; border: 3px dashed; background: rgba(255, 255, 255, 0.08); pointer-events: none; }
+.crop-figure.manual { cursor: crosshair; }
+.crop-box em { position: absolute; left: 0; top: 0; padding: 1px 8px; font: 600 11px/1.6 var(--font-geist-sans), system-ui, sans-serif; color: #fff; font-style: normal; border-bottom-right-radius: 6px; line-height: 1.7; }
+.crop-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.crop-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; }
+.crop-figure .focus-dot { z-index: 2; }
+.ad-prev { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.ad-prev:last-child { margin-bottom: 0; }

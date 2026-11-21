@@ -9,10 +9,19 @@ from .models import Ad, Category, Gallery, GalleryItem, HomeLayout, Image, Locat
 class ImageSerializer(serializers.ModelSerializer):
     # Dosyanın tarayıcıdan erişilecek yolu (örn. /media/images/2026/11/a.jpg).
     url = serializers.CharField(source="file.url", read_only=True)
+    # Eski görsellerde de odak ilk istekte hesaplanıp saklanır.
+    focus_x = serializers.SerializerMethodField()
+    focus_y = serializers.SerializerMethodField()
+
+    def get_focus_x(self, obj):
+        return obj.ensure_focus()[0]
+
+    def get_focus_y(self, obj):
+        return obj.ensure_focus()[1]
 
     class Meta:
         model = Image
-        fields = ["id", "file", "url", "alt", "width", "height", "created_at"]
+        fields = ["id", "file", "url", "alt", "width", "height", "focus_x", "focus_y", "created_at"]
         read_only_fields = ["width", "height", "created_at"]
         extra_kwargs = {"file": {"write_only": True}}
 
@@ -142,16 +151,27 @@ class AdSerializer(serializers.ModelSerializer):
 
     image_url = serializers.CharField(source="image.file.url", read_only=True, default=None)
     status = serializers.SerializerMethodField()
+    image_width = serializers.IntegerField(source="image.width", read_only=True, default=None)
+    image_height = serializers.IntegerField(source="image.height", read_only=True, default=None)
+    # Görselin otomatik bulunan odağı (admin, "otomatik" önizlemeyi çizerken kullanır).
+    auto_focus_x = serializers.SerializerMethodField()
+    auto_focus_y = serializers.SerializerMethodField()
     views = serializers.IntegerField(read_only=True, default=0)
     clicks = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Ad
         fields = [
-            "id", "name", "kind", "image", "image_url", "title", "body", "cta", "link_url",
-            "placements", "weight", "format", "focus_x", "focus_y", "is_active", "starts_on", "ends_on", "status", "views", "clicks", "created_at",
+            "id", "name", "kind", "image", "image_url", "image_width", "image_height", "title", "body", "cta", "link_url",
+            "placements", "weight", "format", "focus_x", "focus_y", "auto_focus_x", "auto_focus_y", "is_active", "starts_on", "ends_on", "status", "views", "clicks", "created_at",
         ]
         read_only_fields = ["created_at"]
+
+    def get_auto_focus_x(self, obj):
+        return obj.image.ensure_focus()[0] if obj.image else None
+
+    def get_auto_focus_y(self, obj):
+        return obj.image.ensure_focus()[1] if obj.image else None
 
     def get_status(self, obj):
         today = timezone.localdate()
@@ -184,6 +204,15 @@ class PublicAdSerializer(serializers.ModelSerializer):
     image_url = serializers.CharField(source="image.file.url", read_only=True, default=None)
     image_width = serializers.IntegerField(source="image.width", read_only=True, default=None)
     image_height = serializers.IntegerField(source="image.height", read_only=True, default=None)
+    # Elle seçilmemişse görselin otomatik odağı (sitede kırpma buna göre yapılır).
+    focus_x = serializers.SerializerMethodField()
+    focus_y = serializers.SerializerMethodField()
+
+    def get_focus_x(self, obj):
+        return obj.resolved_focus()[0]
+
+    def get_focus_y(self, obj):
+        return obj.resolved_focus()[1]
 
     class Meta:
         model = Ad

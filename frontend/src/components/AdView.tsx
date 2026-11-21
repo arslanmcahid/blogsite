@@ -35,7 +35,7 @@ export function AdView({ ad, placement }: { ad: PublicAd; placement: AdPlacement
   return (
     <aside className="ad-slot" aria-label="Reklam">
       <a ref={ref} href={`/api/sponsor/${ad.id}/go/?p=${placement}`} target="_blank" rel="sponsored noopener noreferrer">
-        <AdCard ad={ad} />
+        <AdCard ad={ad} placement={placement} />
       </a>
     </aside>
   );

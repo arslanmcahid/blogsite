@@ -22,10 +22,27 @@ class Image(models.Model):
     alt = models.CharField(max_length=200, blank=True)
     width = models.PositiveIntegerField(null=True, blank=True, editable=False)
     height = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    # Otomatik bulunan "konu" noktası (yüzde); kırpılırken ortada kalır. Bkz. focus.py
+    focus_x = models.PositiveSmallIntegerField(null=True, blank=True, editable=False)
+    focus_y = models.PositiveSmallIntegerField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
+
+    def ensure_focus(self) -> tuple[int, int]:
+        """Odak henüz hesaplanmadıysa (eski görseller) şimdi hesaplayıp saklar."""
+        if self.focus_x is None or self.focus_y is None:
+            from .focus import smart_focus
+
+            self.focus_x, self.focus_y = smart_focus(self.file)
+            type(self).objects.filter(pk=self.pk).update(focus_x=self.focus_x, focus_y=self.focus_y)
+        return self.focus_x, self.focus_y
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.focus_x is None:
+            self.ensure_focus()
 
     def __str__(self):
         return self.alt or self.file.name
@@ -220,8 +237,9 @@ class Ad(models.Model):
     # Afiş düzeltme: görselin gösterileceği oran (auto = görselin kendi oranı) ve kırpılırken
     # görselin hangi noktası ortada kalsın (yüzde olarak; 50/50 = orta).
     format = models.CharField(max_length=12, default="auto", validators=[validate_ad_format])
-    focus_x = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
-    focus_y = models.PositiveSmallIntegerField(default=50, validators=[MaxValueValidator(100)])
+    # None = otomatik (görselin kendi odağı); sayı = admin'in elle seçtiği nokta.
+    focus_x = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MaxValueValidator(100)])
+    focus_y = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MaxValueValidator(100)])
     placements = models.JSONField(default=list, blank=True, validators=[validate_placements])
     # Gösterilme ağırlığı: 3 olan reklam, 1 olandan ortalama 3 kat sık gösterilir.
     weight = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(10)])
@@ -235,6 +253,12 @@ class Ad(models.Model):
 
     def __str__(self):
         return self.name
+
+    def resolved_focus(self) -> tuple[int, int]:
+        """Gösterimde kullanılacak odak: elle seçilmişse o, yoksa görselin otomatik odağı."""
+        if self.focus_x is not None and self.focus_y is not None:
+            return self.focus_x, self.focus_y
+        return self.image.ensure_focus() if self.image else (50, 50)
 
     def is_running(self, today=None) -> bool:
         today = today or timezone.localdate()

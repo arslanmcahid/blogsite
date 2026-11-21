@@ -6,15 +6,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { adminFetch, errorMessage, useApi } from "@/lib/admin-api";
 import { ctr } from "@/lib/ads";
-import { AD_FORMATS, AD_PLACEMENTS, type Ad, type AdFormat, type AdPlacement, type AdStats, type AdminImage } from "@/lib/types";
+import { AD_PLACEMENTS, type Ad, type AdFormat, type AdPlacement, type AdStats, type AdminImage } from "@/lib/types";
 import { AdCard } from "../AdCard";
+import { BannerCrop } from "./BannerCrop";
 import { ImagePicker } from "./ImagePicker";
 import { useToast } from "./Toast";
 
 type Draft = {
   name: string;
   kind: "banner" | "text";
-  image: { id: number; url: string; w: number | null; h: number | null } | null;
+  image: { id: number; url: string; w: number | null; h: number | null; autoX: number; autoY: number } | null;
   title: string;
   body: string;
   cta: string;
@@ -22,24 +23,23 @@ type Draft = {
   placements: AdPlacement[];
   weight: number;
   format: AdFormat;
-  focus_x: number;
-  focus_y: number;
+  focus: { x: number; y: number } | null; // null = otomatik
   is_active: boolean;
   starts_on: string;
   ends_on: string;
 };
 
-const blank: Draft = { name: "", kind: "banner", image: null, title: "", body: "", cta: "", link_url: "", placements: ["home", "post_end"], weight: 1, format: "auto", focus_x: 50, focus_y: 50, is_active: true, starts_on: "", ends_on: "" };
+const blank: Draft = { name: "", kind: "banner", image: null, title: "", body: "", cta: "", link_url: "", placements: ["home", "post_end"], weight: 1, format: "auto", focus: null, is_active: true, starts_on: "", ends_on: "" };
 
 const fromAd = (a: Ad): Draft => ({
-  name: a.name, kind: a.kind, image: a.image && a.image_url ? { id: a.image, url: a.image_url, w: null, h: null } : null,
-  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements, weight: a.weight, format: a.format, focus_x: a.focus_x, focus_y: a.focus_y, is_active: a.is_active,
+  name: a.name, kind: a.kind, image: a.image && a.image_url ? { id: a.image, url: a.image_url, w: a.image_width, h: a.image_height, autoX: a.auto_focus_x ?? 50, autoY: a.auto_focus_y ?? 50 } : null,
+  title: a.title, body: a.body, cta: a.cta, link_url: a.link_url, placements: a.placements, weight: a.weight, format: a.format, focus: a.focus_x !== null && a.focus_y !== null ? { x: a.focus_x, y: a.focus_y } : null, is_active: a.is_active,
   starts_on: a.starts_on ?? "", ends_on: a.ends_on ?? "",
 });
 
 const payload = (d: Draft) => ({
   name: d.name.trim(), kind: d.kind, image: d.image?.id ?? null, title: d.title.trim(), body: d.body.trim(), cta: d.cta.trim(),
-  link_url: d.link_url.trim(), placements: d.placements, weight: d.weight, format: d.format, focus_x: d.focus_x, focus_y: d.focus_y, is_active: d.is_active,
+  link_url: d.link_url.trim(), placements: d.placements, weight: d.weight, format: d.format, focus_x: d.focus?.x ?? null, focus_y: d.focus?.y ?? null, is_active: d.is_active,
   starts_on: d.starts_on || null, ends_on: d.ends_on || null,
 });
 
@@ -204,7 +204,7 @@ function AdForm({ ad, onSaved }: { ad: Ad | null; onSaved: () => void }) {
     update({ placements: draft.placements.includes(p) ? draft.placements.filter((x) => x !== p) : [...draft.placements, p] });
 
   const preview = useMemo(
-    () => ({ kind: draft.kind, name: draft.name || "Reklamveren", title: draft.title, body: draft.body, cta: draft.cta, image_url: draft.image?.url ?? null, image_width: draft.image?.w ?? null, image_height: draft.image?.h ?? null, format: draft.format, focus_x: draft.focus_x, focus_y: draft.focus_y }),
+    () => ({ kind: draft.kind, name: draft.name || "Reklamveren", title: draft.title, body: draft.body, cta: draft.cta, image_url: draft.image?.url ?? null, image_width: draft.image?.w ?? null, image_height: draft.image?.h ?? null, format: draft.format, focus_x: draft.focus?.x ?? draft.image?.autoX ?? 50, focus_y: draft.focus?.y ?? draft.image?.autoY ?? 50 }),
     [draft],
   );
 
@@ -219,7 +219,7 @@ function AdForm({ ad, onSaved }: { ad: Ad | null; onSaved: () => void }) {
     }
   }
 
-  const pickImage = (img: AdminImage) => update({ image: { id: img.id, url: img.url, w: img.width, h: img.height } });
+  const pickImage = (img: AdminImage) => update({ image: { id: img.id, url: img.url, w: img.width, h: img.height, autoX: img.focus_x ?? 50, autoY: img.focus_y ?? 50 }, focus: null });
 
   return (
     <div>
@@ -269,43 +269,13 @@ function AdForm({ ad, onSaved }: { ad: Ad | null; onSaved: () => void }) {
           </div>
 
           {draft.kind === "banner" && draft.image && (
-            <div className="card stack">
-              <div>
-                <h2>Afişi düzelt</h2>
-                <p className="muted small" style={{ margin: 0 }}>Afişin hangi biçimde (oranda) gösterileceğini seç. Görsel bu orana kırpılır. Sonra görselin üzerine tıklayıp kırpılırken ortada <strong>kalmasını istediğin noktayı</strong> işaretle.</p>
-              </div>
-              <label>Biçim
-                <select value={draft.format} onChange={(e) => update({ format: e.target.value as AdFormat })}>
-                  {AD_FORMATS.map((f) => <option key={f.id} value={f.id}>{f.label} — {f.hint}</option>)}
-                </select>
-              </label>
-              {draft.format !== "auto" && (
-                <>
-                  <div className="focus-pick" title="Kalmasını istediğin noktaya tıkla">
-                    <button
-                      type="button"
-                      aria-label="Odak noktasını görsel üzerinde seç"
-                      onClick={(e) => {
-                        const r = e.currentTarget.getBoundingClientRect();
-                        update({ focus_x: Math.round(((e.clientX - r.left) / r.width) * 100), focus_y: Math.round(((e.clientY - r.top) / r.height) * 100) });
-                      }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={draft.image.url} alt="" draggable={false} />
-                      <span className="focus-dot" style={{ left: `${draft.focus_x}%`, top: `${draft.focus_y}%` }} />
-                    </button>
-                  </div>
-                  <div className="row">
-                    <span className="muted small">Odak: %{draft.focus_x}, %{draft.focus_y}</span>
-                    <span className="spacer" />
-                    <button type="button" className="btn small" onClick={() => update({ focus_x: 50, focus_y: 50 })}>Ortala</button>
-                  </div>
-                </>
-              )}
-              {draft.placements.some((p) => p === "side_left" || p === "side_right") && draft.format !== "tall" && draft.format !== "rect" && (
-                <p className="admin-error" style={{ background: "var(--a-warn-bg)", color: "var(--a-warn)", borderColor: "transparent" }}>Yan alanlar dar olduğu için “Dikey 160×600” ya da “Dikdörtgen 300×250” biçimi daha iyi görünür.</p>
-              )}
-            </div>
+            <BannerCrop
+              image={draft.image}
+              placements={draft.placements}
+              format={draft.format}
+              focus={draft.focus}
+              onChange={(p) => update({ ...(p.format !== undefined ? { format: p.format } : {}), ...(p.focus !== undefined ? { focus: p.focus } : {}) })}
+            />
           )}
 
           {id && ad && <Report ad={ad} />}
@@ -346,7 +316,12 @@ function AdForm({ ad, onSaved }: { ad: Ad | null; onSaved: () => void }) {
           <div className="card stack">
             <h2>Önizleme</h2>
             <div className="preview-frame" style={{ padding: 16 }}>
-              <div className="ad-slot" style={{ margin: 0 }}><span style={{ display: "block" }}><AdCard ad={preview} /></span></div>
+              {(draft.placements.length ? draft.placements : (["post_end"] as AdPlacement[])).map((p) => (
+                <div key={p} className="ad-prev">
+                  <span className="muted small">{AD_PLACEMENTS.find((x) => x.id === p)?.label}</span>
+                  <div className="ad-slot" style={{ margin: 0, maxWidth: p.startsWith("side") ? 200 : undefined }}><span style={{ display: "block" }}><AdCard ad={preview} placement={p} /></span></div>
+                </div>
+              ))}
             </div>
           </div>
 

@@ -333,3 +333,41 @@ def test_side_placements_and_banner_format(admin_client, anon):
     for bad in ({"format": "huge"}, {"focus_x": 101}):
         r = admin_client.post("/api/ads/", {"name": "B", "kind": "banner", "image": img, "link_url": "https://x.com", **bad}, format="json")
         assert r.status_code == 400
+
+
+def test_smart_focus_finds_the_subject_and_ads_use_it(admin_client, anon):
+    import io as _io
+
+    from PIL import Image as _PIL
+    from PIL import ImageDraw
+
+    from blog.focus import smart_focus
+
+    # Gri düz zemin üzerinde sağ-altta parlak, ayrıntılı bir konu
+    im = _PIL.new("RGB", (400, 300), (120, 120, 120))
+    d = ImageDraw.Draw(im)
+    d.ellipse((260, 170, 380, 290), fill=(220, 90, 40))
+    d.rectangle((300, 200, 340, 240), fill=(240, 200, 170))
+    fx, fy = smart_focus(_io.BytesIO(_to_png(im)))
+    assert fx > 60 and fy > 60
+
+    buf = _io.BytesIO(_to_png(im))
+    buf.name = "konu.png"
+    img = admin_client.post("/api/images/", {"file": buf}, format="multipart").json()
+    assert img["focus_x"] > 60 and img["focus_y"] > 60  # yüklenirken otomatik hesaplandı
+
+    ad = admin_client.post("/api/ads/", {"name": "O", "kind": "banner", "image": img["id"], "link_url": "https://x.com", "placements": ["home"]}, format="json").json()
+    assert ad["focus_x"] is None and ad["auto_focus_x"] == img["focus_x"]  # elle seçilmedi = otomatik
+    got = anon.get("/api/sponsor/pick/?placement=home").json()["ad"]
+    assert got["focus_x"] == img["focus_x"]
+    admin_client.patch(f"/api/ads/{ad['id']}/", {"focus_x": 10, "focus_y": 20}, format="json")
+    got = anon.get("/api/sponsor/pick/?placement=home").json()["ad"]
+    assert (got["focus_x"], got["focus_y"]) == (10, 20)  # elle seçilen öncelikli
+
+
+def _to_png(im):
+    import io as _io
+
+    b = _io.BytesIO()
+    im.save(b, "PNG")
+    return b.getvalue()

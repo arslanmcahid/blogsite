@@ -100,20 +100,23 @@ export type AdminImage = {
   alt: string;
   width: number | null;
   height: number | null;
+  focus_x: number | null;
+  focus_y: number | null;
 };
 
 // --- Reklamlar ---
 export type AdPlacement = "home" | "post_inline" | "post_end" | "side_left" | "side_right";
 export type AdFormat = "auto" | "leaderboard" | "billboard" | "rect" | "tall";
 
-/** Afiş biçimleri: görsel bu orana kırpılır (auto: görselin kendi oranı). */
-export const AD_FORMATS: { id: AdFormat; label: string; ratio: string | null; hint: string }[] = [
-  { id: "auto", label: "Görselin kendi oranı", ratio: null, hint: "Kırpılmaz" },
-  { id: "leaderboard", label: "Yatay şerit 728×90", ratio: "728 / 90", hint: "Yazı içi ve sonu için" },
-  { id: "billboard", label: "Geniş yatay 970×250", ratio: "970 / 250", hint: "Ana sayfa için" },
-  { id: "rect", label: "Dikdörtgen 300×250", ratio: "300 / 250", hint: "Her yerde" },
-  { id: "tall", label: "Dikey 160×600", ratio: "160 / 600", hint: "Yan alanlar için" },
+/** Afiş biçimleri: görsel bu orana kırpılır (auto: sistem yere göre seçer). */
+export const AD_FORMATS: { id: AdFormat; label: string; w: number; h: number; hint: string }[] = [
+  { id: "auto", label: "Otomatik", w: 0, h: 0, hint: "Sistem yere göre seçer" },
+  { id: "leaderboard", label: "Yatay şerit 728×90", w: 728, h: 90, hint: "Yazı içi ve sonu için" },
+  { id: "billboard", label: "Geniş yatay 970×250", w: 970, h: 250, hint: "Ana sayfa için" },
+  { id: "rect", label: "Dikdörtgen 300×250", w: 300, h: 250, hint: "Her yerde" },
+  { id: "tall", label: "Dikey 160×600", w: 160, h: 600, hint: "Yan alanlar için" },
 ];
+
 export const AD_PLACEMENTS: { id: AdPlacement; label: string; hint: string }[] = [
   { id: "home", label: "Ana sayfa", hint: "Ana sayfanın içinde (düzenden “Reklam” bölümü eklemezsen ilk bölümün altında)" },
   { id: "post_inline", label: "Yazı içi", hint: "Yazının içinde (yazıya “Reklam” bölümü eklemezsen ortasına otomatik)" },
@@ -150,8 +153,12 @@ export type Ad = {
   placements: AdPlacement[];
   weight: number;
   format: AdFormat;
-  focus_x: number;
-  focus_y: number;
+  focus_x: number | null; // null = otomatik
+  focus_y: number | null;
+  auto_focus_x: number | null;
+  auto_focus_y: number | null;
+  image_width: number | null;
+  image_height: number | null;
   is_active: boolean;
   starts_on: string | null;
   ends_on: string | null;
