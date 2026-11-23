@@ -9,13 +9,18 @@ type Theme = "light" | "dark";
 function current(): Theme {
   const chosen = document.documentElement.dataset.theme;
   if (chosen === "light" || chosen === "dark") return chosen;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 function subscribe(onChange: () => void) {
   // data-theme değişince (düğme ya da başka sekme) ve cihaz ayarı değişince yeniden oku.
   const obs = new MutationObserver(onChange);
-  obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  obs.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
   const mq = window.matchMedia("(prefers-color-scheme: dark)");
   mq.addEventListener("change", onChange);
   return () => {
@@ -26,7 +31,11 @@ function subscribe(onChange: () => void) {
 
 /** Üst menüdeki aydınlık/karanlık mod düğmesi. Seçim bu tarayıcıda hatırlanır. */
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, current, () => "light" as Theme);
+  const theme = useSyncExternalStore(
+    subscribe,
+    current,
+    () => "light" as Theme,
+  );
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
@@ -40,7 +49,13 @@ export function ThemeToggle() {
 
   const toDark = theme === "light";
   return (
-    <button type="button" className="theme-toggle" onClick={toggle} aria-label={toDark ? "Karanlık moda geç" : "Aydınlık moda geç"} title={toDark ? "Karanlık mod" : "Aydınlık mod"}>
+    <button
+      type="button"
+      className="theme-toggle"
+      onClick={toggle}
+      aria-label={toDark ? "Karanlık moda geç" : "Aydınlık moda geç"}
+      title={toDark ? "Karanlık mod" : "Aydınlık mod"}
+    >
       {toDark ? <Moon size={16} aria-hidden /> : <Sun size={16} aria-hidden />}
     </button>
   );

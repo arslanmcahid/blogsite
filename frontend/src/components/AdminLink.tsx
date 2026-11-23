@@ -15,5 +15,10 @@ export function AdminLink() {
       cancelled = true;
     };
   }, []);
-  return isStaff ? <Link href="/admin" className="admin-link">Yönetim</Link> : null;
+
+  return isStaff ? (
+    <Link href="/admin" className="admin-link">
+      Yönetim
+    </Link>
+  ) : null;
 }

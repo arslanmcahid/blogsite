@@ -23,7 +23,13 @@ function subStepsPerChar(text: string): number[] {
     if (ctx) {
       ctx.font = "13px system-ui";
       const hair = ctx.measureText(HAIR).width;
-      if (hair > 0) return [...text].map((ch) => Math.min(12, Math.max(2, Math.round(ctx.measureText(ch).width / hair))));
+      if (hair > 0)
+        return [...text].map((ch) =>
+          Math.min(
+            12,
+            Math.max(2, Math.round(ctx.measureText(ch).width / hair)),
+          ),
+        );
     }
   } catch {
     /* ölçülemezse aşağıdaki varsayılan */
@@ -43,7 +49,12 @@ export function TitleMarquee() {
   useEffect(() => {
     if (pathname !== "/") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (/bot|crawl|spider|slurp|headless|lighthouse|preview/i.test(navigator.userAgent)) return;
+    if (
+      /bot|crawl|spider|slurp|headless|lighthouse|preview/i.test(
+        navigator.userAgent,
+      )
+    )
+      return;
 
     const text = MARQUEE_TEXT + SEPARATOR;
     // Kare planı: metin f saç teli kadar sola kaymış olmalı. Başa boşluk ekleyerek sola kaydıramayız, bu yüzden
@@ -51,7 +62,8 @@ export function TitleMarquee() {
     const counts = subStepsPerChar(text);
     const plan: { off: number; pad: number }[] = [];
     counts.forEach((n, c) => {
-      for (let r = 0; r < n; r++) plan.push(r === 0 ? { off: c, pad: 0 } : { off: c + 1, pad: n - r });
+      for (let r = 0; r < n; r++)
+        plan.push(r === 0 ? { off: c, pad: 0 } : { off: c + 1, pad: n - r });
     });
     let timer: ReturnType<typeof setTimeout>;
 

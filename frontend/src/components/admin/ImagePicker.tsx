@@ -8,11 +8,17 @@ function Library({ onSelect }: { onSelect: (img: AdminImage) => void }) {
   const { data, error, loading } = useApi<AdminImage[]>("/api/images/");
   if (loading) return <p className="muted">Kütüphane yükleniyor…</p>;
   if (error) return <p className="admin-error">{error.message}</p>;
-  if (!data?.length) return <p className="muted">Kütüphane boş. Yukarıdan görsel yükle.</p>;
+  if (!data?.length)
+    return <p className="muted">Kütüphane boş. Yukarıdan görsel yükle.</p>;
   return (
     <div className="library">
       {data.map((img) => (
-        <button type="button" key={img.id} onClick={() => onSelect(img)} title={img.alt || img.url}>
+        <button
+          type="button"
+          key={img.id}
+          onClick={() => onSelect(img)}
+          title={img.alt || img.url}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={img.url} alt={img.alt} loading="lazy" />
         </button>
@@ -51,7 +57,12 @@ export function ImagePicker({
       for (const file of Array.from(files)) {
         const form = new FormData();
         form.append("file", file);
-        pick(await adminFetch<AdminImage>("/api/images/", { method: "POST", form }));
+        pick(
+          await adminFetch<AdminImage>("/api/images/", {
+            method: "POST",
+            form,
+          }),
+        );
       }
     } catch (e) {
       setError(errorMessage(e));
@@ -61,16 +72,32 @@ export function ImagePicker({
   }
 
   if (!open) {
-    return <button type="button" className="btn" onClick={() => setOpen(true)}>{label}</button>;
+    return (
+      <button type="button" className="btn" onClick={() => setOpen(true)}>
+        {label}
+      </button>
+    );
   }
   return (
     <div className="picker">
       <div className="picker-head">
         <label className="btn primary">
           {busy ? "Yükleniyor…" : "Bilgisayardan yükle"}
-          <input type="file" accept="image/*" multiple={multiple} hidden disabled={busy} onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+          <input
+            type="file"
+            accept="image/*"
+            multiple={multiple}
+            hidden
+            disabled={busy}
+            onChange={(e) => {
+              upload(e.target.files);
+              e.target.value = "";
+            }}
+          />
         </label>
-        <button type="button" className="btn" onClick={() => setOpen(false)}>Kapat</button>
+        <button type="button" className="btn" onClick={() => setOpen(false)}>
+          Kapat
+        </button>
       </div>
       {error && <p className="admin-error">{error}</p>}
       <p className="muted small">veya kütüphaneden seç:</p>

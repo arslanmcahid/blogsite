@@ -31,7 +31,9 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export const getHome = () => apiGet<HomeLayout>("/api/home/");
-export const getPosts = (filter: { location?: number; category?: string; tag?: string } = {}) => {
+export const getPosts = (
+  filter: { location?: number; category?: string; tag?: string } = {},
+) => {
   const q = new URLSearchParams();
   if (filter.location) q.set("location", String(filter.location));
   if (filter.category) q.set("category", filter.category);
@@ -50,12 +52,18 @@ export const getGalleryOrNull = (slug: string) =>
   apiGetOrNull<Gallery>(`/api/galleries/${encodeURIComponent(slug)}/`);
 
 /** Bir yer için o an yayında olan (ağırlığa göre seçilmiş) reklam; yoksa null. Hata sayfayı bozmaz. */
-export async function pickAd(placement: AdPlacement, opts: { pin?: number; exclude?: number[] } = {}): Promise<PublicAd | null> {
+export async function pickAd(
+  placement: AdPlacement,
+  opts: { pin?: number; exclude?: number[] } = {},
+): Promise<PublicAd | null> {
   const q = new URLSearchParams({ placement });
   if (opts.pin) q.set("pin", String(opts.pin));
   if (opts.exclude?.length) q.set("exclude", opts.exclude.join(","));
   try {
-    return (await apiGetOrNull<{ ad: PublicAd | null }>(`/api/sponsor/pick/?${q}`))?.ad ?? null;
+    return (
+      (await apiGetOrNull<{ ad: PublicAd | null }>(`/api/sponsor/pick/?${q}`))
+        ?.ad ?? null
+    );
   } catch {
     return null;
   }

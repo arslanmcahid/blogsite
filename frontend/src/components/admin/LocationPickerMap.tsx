@@ -8,7 +8,15 @@ import type { Location } from "@/lib/types";
 type LatLng = { lat: number; lng: number };
 
 /** Haritaya tıklayınca onPick çağrılır; mevcut konumlar mavi, seçilen nokta turuncu görünür. */
-export function LocationPickerMap({ locations, pending, onPick }: { locations: Location[]; pending: LatLng | null; onPick: (p: LatLng) => void }) {
+export function LocationPickerMap({
+  locations,
+  pending,
+  onPick,
+}: {
+  locations: Location[];
+  pending: LatLng | null;
+  onPick: (p: LatLng) => void;
+}) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const layerRef = useRef<Leaflet.LayerGroup | null>(null);
@@ -53,12 +61,31 @@ export function LocationPickerMap({ locations, pending, onPick }: { locations: L
     if (!ready || !L || !layer) return;
     layer.clearLayers();
     locations.forEach((l) =>
-      L.circleMarker([Number(l.latitude), Number(l.longitude)], { radius: 8, color: "#1d4f91", fillColor: "#3b82e8", fillOpacity: 0.85 })
+      L.circleMarker([Number(l.latitude), Number(l.longitude)], {
+        radius: 8,
+        color: "#1d4f91",
+        fillColor: "#3b82e8",
+        fillOpacity: 0.85,
+      })
         .bindTooltip(l.name)
         .addTo(layer),
     );
-    if (pending) L.circleMarker([pending.lat, pending.lng], { radius: 10, color: "#b4441c", fillColor: "#e8743b", fillOpacity: 0.95 }).addTo(layer);
+    if (pending)
+      L.circleMarker([pending.lat, pending.lng], {
+        radius: 10,
+        color: "#b4441c",
+        fillColor: "#e8743b",
+        fillOpacity: 0.95,
+      }).addTo(layer);
   }, [ready, locations, pending]);
 
-  return <div ref={el} className="map" style={{ height: 380, cursor: "crosshair" }} role="application" aria-label="Konum seçmek için haritaya tıkla" />;
+  return (
+    <div
+      ref={el}
+      className="map"
+      style={{ height: 380, cursor: "crosshair" }}
+      role="application"
+      aria-label="Konum seçmek için haritaya tıkla"
+    />
+  );
 }

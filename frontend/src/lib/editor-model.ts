@@ -16,18 +16,30 @@ const withId = (b: InnerBlock): EInner => ({ ...b, id: newId() });
 
 export function toEditor(blocks: Block[]): EBlock[] {
   return blocks.map((b) =>
-    b.type === "columns" ? { id: newId(), type: "columns", columns: b.columns.map((c) => c.map(withId)) } : withId(b),
+    b.type === "columns"
+      ? {
+          id: newId(),
+          type: "columns",
+          columns: b.columns.map((c) => c.map(withId)),
+        }
+      : withId(b),
   );
 }
 
 function isEmptyInner(b: InnerBlock): boolean {
   switch (b.type) {
-    case "text": return b.markdown.trim() === "";
-    case "image": return !b.src;
-    case "quote": return b.text.trim() === "";
-    case "gallery": return !b.gallery;
-    case "video": return !b.url.trim();
-    case "map": return !b.location;
+    case "text":
+      return b.markdown.trim() === "";
+    case "image":
+      return !b.src;
+    case "quote":
+      return b.text.trim() === "";
+    case "gallery":
+      return !b.gallery;
+    case "video":
+      return !b.url.trim();
+    case "map":
+      return !b.location;
   }
 }
 
@@ -42,7 +54,9 @@ export function toApi(blocks: EBlock[]): Block[] {
   const out: Block[] = [];
   for (const b of blocks) {
     if (b.type === "columns") {
-      const columns = b.columns.map((c) => c.map(stripInner).filter((x) => !isEmptyInner(x)));
+      const columns = b.columns.map((c) =>
+        c.map(stripInner).filter((x) => !isEmptyInner(x)),
+      );
       if (columns.every((c) => c.length === 0)) continue;
       out.push({ type: "columns", columns });
     } else {
@@ -65,16 +79,26 @@ export const BLOCK_INFO: Record<BlockType, { label: string; hint: string }> = {
   map: { label: "Harita", hint: "Bir konumu haritada göster" },
 };
 
-export function makeBlock(type: BlockType, defaults: { gallery?: string; location?: number } = {}): EBlock {
+export function makeBlock(
+  type: BlockType,
+  defaults: { gallery?: string; location?: number } = {},
+): EBlock {
   const id = newId();
   switch (type) {
-    case "text": return { id, type, markdown: "" };
-    case "image": return { id, type, src: "", alt: "", caption: "" };
-    case "quote": return { id, type, text: "", author: "" };
-    case "gallery": return { id, type, gallery: defaults.gallery ?? "" };
-    case "video": return { id, type, url: "" };
-    case "map": return { id, type, location: defaults.location ?? 0 };
-    case "columns": return { id, type, columns: [[], []] };
+    case "text":
+      return { id, type, markdown: "" };
+    case "image":
+      return { id, type, src: "", alt: "", caption: "" };
+    case "quote":
+      return { id, type, text: "", author: "" };
+    case "gallery":
+      return { id, type, gallery: defaults.gallery ?? "" };
+    case "video":
+      return { id, type, url: "" };
+    case "map":
+      return { id, type, location: defaults.location ?? 0 };
+    case "columns":
+      return { id, type, columns: [[], []] };
   }
 }
 
@@ -124,7 +148,10 @@ export const TEMPLATES: Template[] = [
         type: "columns",
         columns: [
           [{ type: "text", markdown: "" }],
-          [{ type: "quote", text: "", author: "" }, { type: "image", src: "", alt: "", caption: "" }],
+          [
+            { type: "quote", text: "", author: "" },
+            { type: "image", src: "", alt: "", caption: "" },
+          ],
         ],
       },
       { type: "text", markdown: "" },

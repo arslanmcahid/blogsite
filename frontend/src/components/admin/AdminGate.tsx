@@ -1,6 +1,16 @@
 "use client";
 
-import { CircleHelp, FileText, Megaphone, Globe, Images, LayoutDashboard, LogOut, MapPin, Navigation } from "lucide-react";
+import {
+  CircleHelp,
+  FileText,
+  Megaphone,
+  Globe,
+  Images,
+  LayoutDashboard,
+  LogOut,
+  MapPin,
+  Navigation,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -34,7 +44,8 @@ function titleFor(pathname: string): string {
   return "Yönetim";
 }
 
-const isActive = (pathname: string, href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
+const isActive = (pathname: string, href: string) =>
+  href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
 export function AdminGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -43,13 +54,23 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
   const howto = useRef<HowToHandle>(null);
 
   useEffect(() => {
-    if (error instanceof ApiError && error.status === 401) router.replace("/admin/login");
+    if (error instanceof ApiError && error.status === 401)
+      router.replace("/admin/login");
   }, [error, router]);
 
   if (error && !(error instanceof ApiError && error.status === 401)) {
-    return <p className="admin-error" style={{ margin: 24 }}>{error.message}</p>;
+    return (
+      <p className="admin-error" style={{ margin: 24 }}>
+        {error.message}
+      </p>
+    );
   }
-  if (!me) return <p className="muted" style={{ padding: 24 }}>Yükleniyor…</p>;
+  if (!me)
+    return (
+      <p className="muted" style={{ padding: 24 }}>
+        Yükleniyor…
+      </p>
+    );
 
   async function logout() {
     await adminFetch("/api/auth/logout/", { method: "POST" });
@@ -59,17 +80,35 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <Link href="/admin" className="brand"><MapPin size={20} aria-hidden /> Blog yönetimi</Link>
+        <Link href="/admin" className="brand">
+          <MapPin size={20} aria-hidden /> Blog yönetimi
+        </Link>
         <nav aria-label="Yönetim menüsü">
           {NAV.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} data-tour={`nav-${href.split("/").pop() || "panel"}`} className={`nav-item ${isActive(pathname, href) ? "active" : ""}`} aria-current={isActive(pathname, href) ? "page" : undefined}>
+            <Link
+              key={href}
+              href={href}
+              data-tour={`nav-${href.split("/").pop() || "panel"}`}
+              className={`nav-item ${isActive(pathname, href) ? "active" : ""}`}
+              aria-current={isActive(pathname, href) ? "page" : undefined}
+            >
               <Icon size={16} aria-hidden /> {label}
             </Link>
           ))}
         </nav>
-        <button type="button" className="nav-item" onClick={() => howto.current?.open()}><CircleHelp size={16} aria-hidden /> Nasıl kullanılır?</button>
-        <Link href="/" target="_blank" className="nav-item"><Globe size={16} aria-hidden /> Siteyi aç</Link>
-        <button type="button" className="nav-item" onClick={logout}><LogOut size={16} aria-hidden /> Çıkış yap</button>
+        <button
+          type="button"
+          className="nav-item"
+          onClick={() => howto.current?.open()}
+        >
+          <CircleHelp size={16} aria-hidden /> Nasıl kullanılır?
+        </button>
+        <Link href="/" target="_blank" className="nav-item">
+          <Globe size={16} aria-hidden /> Siteyi aç
+        </Link>
+        <button type="button" className="nav-item" onClick={logout}>
+          <LogOut size={16} aria-hidden /> Çıkış yap
+        </button>
       </aside>
       <div className="shell-main">
         <header className="topbar">
@@ -78,14 +117,29 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
         </header>
         <nav className="mobile-nav" aria-label="Yönetim menüsü (mobil)">
           {NAV.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} data-tour={`nav-${href.split("/").pop() || "panel"}`} className={`nav-item ${isActive(pathname, href) ? "active" : ""}`}>
+            <Link
+              key={href}
+              href={href}
+              data-tour={`nav-${href.split("/").pop() || "panel"}`}
+              className={`nav-item ${isActive(pathname, href) ? "active" : ""}`}
+            >
               <Icon size={16} aria-hidden /> {label}
             </Link>
           ))}
-          <button type="button" className="nav-item" onClick={() => howto.current?.open()}><CircleHelp size={16} aria-hidden /> Yardım</button>
-          <button type="button" className="nav-item" onClick={logout}><LogOut size={16} aria-hidden /> Çıkış</button>
+          <button
+            type="button"
+            className="nav-item"
+            onClick={() => howto.current?.open()}
+          >
+            <CircleHelp size={16} aria-hidden /> Yardım
+          </button>
+          <button type="button" className="nav-item" onClick={logout}>
+            <LogOut size={16} aria-hidden /> Çıkış
+          </button>
         </nav>
-        <main className="content"><ToastProvider>{children}</ToastProvider></main>
+        <main className="content">
+          <ToastProvider>{children}</ToastProvider>
+        </main>
         <HowTo handle={howto} />
       </div>
     </div>

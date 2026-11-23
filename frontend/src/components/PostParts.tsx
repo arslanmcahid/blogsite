@@ -2,13 +2,37 @@ import Link from "next/link";
 import type { Category, InfoRow, RelatedPost, Source, Tag } from "@/lib/types";
 
 /** Kategori ve etiket çipleri; her biri o filtreyle yazı listesine gider. */
-export function PostMeta({ category, tags, newTab = false }: { category: Category | null; tags: Tag[]; newTab?: boolean }) {
+export function PostMeta({
+  category,
+  tags,
+  newTab = false,
+}: {
+  category: Category | null;
+  tags: Tag[];
+  newTab?: boolean;
+}) {
   if (!category && tags.length === 0) return null;
   const t = newTab ? { target: "_blank", rel: "noreferrer" } : {};
   return (
     <p className="post-meta">
-      {category && <Link className="cat" href={`/yazilar?kategori=${encodeURIComponent(category.slug)}`} {...t}>{category.name}</Link>}
-      {tags.map((tag) => <Link key={tag.id} href={`/yazilar?etiket=${encodeURIComponent(tag.slug)}`} {...t}>#{tag.name}</Link>)}
+      {category && (
+        <Link
+          className="cat"
+          href={`/yazilar?kategori=${encodeURIComponent(category.slug)}`}
+          {...t}
+        >
+          {category.name}
+        </Link>
+      )}
+      {tags.map((tag) => (
+        <Link
+          key={tag.id}
+          href={`/yazilar?etiket=${encodeURIComponent(tag.slug)}`}
+          {...t}
+        >
+          #{tag.name}
+        </Link>
+      ))}
     </p>
   );
 }
@@ -39,7 +63,14 @@ export function SourcesView({ sources }: { sources: Source[] }) {
         {sources.map((s, i) => (
           <li key={i}>
             {s.text}
-            {s.url && <> <a href={s.url} target="_blank" rel="noopener noreferrer">{s.url}</a></>}
+            {s.url && (
+              <>
+                {" "}
+                <a href={s.url} target="_blank" rel="noopener noreferrer">
+                  {s.url}
+                </a>
+              </>
+            )}
           </li>
         ))}
       </ol>
@@ -47,7 +78,13 @@ export function SourcesView({ sources }: { sources: Source[] }) {
   );
 }
 
-export function RelatedView({ posts, newTab = false }: { posts: RelatedPost[]; newTab?: boolean }) {
+export function RelatedView({
+  posts,
+  newTab = false,
+}: {
+  posts: RelatedPost[];
+  newTab?: boolean;
+}) {
   if (posts.length === 0) return null;
   const t = newTab ? { target: "_blank", rel: "noreferrer" } : {};
   return (

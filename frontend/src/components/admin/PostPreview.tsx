@@ -3,21 +3,43 @@
 import { useMemo } from "react";
 import { useApi } from "@/lib/admin-api";
 import { formatDate } from "@/lib/format";
-import type { Block, Category, Gallery, InfoRow, InnerBlock, Location, PostTheme, RelatedPost, Source, Tag } from "@/lib/types";
+import type {
+  Block,
+  Category,
+  Gallery,
+  InfoRow,
+  InnerBlock,
+  Location,
+  PostTheme,
+  RelatedPost,
+  Source,
+  Tag,
+} from "@/lib/types";
 import { MapView } from "../MapView";
 import { Markdown } from "../Markdown";
 import { InfoCardView, PostMeta, RelatedView, SourcesView } from "../PostParts";
 import { VideoEmbed } from "../VideoEmbed";
 
 function PreviewMap({ id, locations }: { id: number; locations: Location[] }) {
-  const selected = useMemo(() => locations.filter((l) => l.id === id), [locations, id]);
-  if (selected.length === 0) return <p className="muted small">Harita için bir konum seç.</p>;
+  const selected = useMemo(
+    () => locations.filter((l) => l.id === id),
+    [locations, id],
+  );
+  if (selected.length === 0)
+    return <p className="muted small">Harita için bir konum seç.</p>;
   return <MapView locations={selected} height={240} />;
 }
 
 function PreviewGallery({ slug }: { slug: string }) {
-  const { data, error } = useApi<Gallery>(`/api/galleries/${encodeURIComponent(slug)}/`);
-  if (error) return <p className="muted small">“{slug}” sergisi bulunamadı veya yayında değil.</p>;
+  const { data, error } = useApi<Gallery>(
+    `/api/galleries/${encodeURIComponent(slug)}/`,
+  );
+  if (error)
+    return (
+      <p className="muted small">
+        “{slug}” sergisi bulunamadı veya yayında değil.
+      </p>
+    );
   if (!data) return <p className="muted small">Sergi yükleniyor…</p>;
   return (
     <section className="block-gallery">
@@ -35,7 +57,13 @@ function PreviewGallery({ slug }: { slug: string }) {
   );
 }
 
-function Item({ block, locations }: { block: InnerBlock; locations: Location[] }) {
+function Item({
+  block,
+  locations,
+}: {
+  block: InnerBlock;
+  locations: Location[];
+}) {
   switch (block.type) {
     case "text":
       return <Markdown>{block.markdown}</Markdown>;
@@ -65,7 +93,19 @@ function Item({ block, locations }: { block: InnerBlock; locations: Location[] }
 
 /** Yazının sitede görüneceği hâlin kabaca aynısı (aynı CSS sınıfları kullanılır). */
 export function PostPreview({
-  title, excerpt, coverUrl, publishedAt, blocks, theme, locations, postLocations, category, tags, info, sources, related,
+  title,
+  excerpt,
+  coverUrl,
+  publishedAt,
+  blocks,
+  theme,
+  locations,
+  postLocations,
+  category,
+  tags,
+  info,
+  sources,
+  related,
 }: {
   title: string;
   excerpt: string;
@@ -83,9 +123,16 @@ export function PostPreview({
 }) {
   const { font = "serif", width = "normal", accent } = theme;
   return (
-    <article className={`post font-${font} width-${width}`} style={accent ? ({ "--accent": accent } as React.CSSProperties) : undefined}>
+    <article
+      className={`post font-${font} width-${width}`}
+      style={
+        accent ? ({ "--accent": accent } as React.CSSProperties) : undefined
+      }
+    >
       <header>
-        <time>{publishedAt ? formatDate(publishedAt) : "Yayın tarihi henüz yok"}</time>
+        <time>
+          {publishedAt ? formatDate(publishedAt) : "Yayın tarihi henüz yok"}
+        </time>
         <h1>{title || "Başlıksız yazı"}</h1>
         {excerpt && <p className="lead">{excerpt}</p>}
         <PostMeta category={category} tags={tags} newTab />
@@ -96,13 +143,21 @@ export function PostPreview({
       )}
       <InfoCardView rows={info} />
       <div className="blocks">
-        {blocks.length === 0 && <p className="muted">Yazına bölüm eklediğinde burada görünecek.</p>}
+        {blocks.length === 0 && (
+          <p className="muted">Yazına bölüm eklediğinde burada görünecek.</p>
+        )}
         {blocks.map((b, i) =>
           b.type === "columns" ? (
-            <div key={i} className="block-columns" style={{ "--cols": b.columns.length } as React.CSSProperties}>
+            <div
+              key={i}
+              className="block-columns"
+              style={{ "--cols": b.columns.length } as React.CSSProperties}
+            >
               {b.columns.map((col, ci) => (
                 <div key={ci} className="column">
-                  {col.map((inner, bi) => <Item key={bi} block={inner} locations={locations} />)}
+                  {col.map((inner, bi) => (
+                    <Item key={bi} block={inner} locations={locations} />
+                  ))}
                 </div>
               ))}
             </div>

@@ -5,12 +5,19 @@ import "leaflet/dist/leaflet.css";
 import type { Location } from "@/lib/types";
 
 // Leaflet tarayıcıya (window) ihtiyaç duyar; bu yüzden sadece istemcide, effect içinde yüklenir.
-export function MapView({ locations, height = 320 }: { locations: Location[]; height?: number }) {
+export function MapView({
+  locations,
+  height = 320,
+}: {
+  locations: Location[];
+  height?: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!ref.current || locations.length === 0) return;
     let map: import("leaflet").Map | undefined;
+
     let cancelled = false;
 
     import("leaflet").then((L) => {
@@ -23,7 +30,12 @@ export function MapView({ locations, height = 320 }: { locations: Location[]; he
       const points = locations.map((l) => {
         const ll: [number, number] = [Number(l.latitude), Number(l.longitude)];
         // Varsayılan marker ikonu bundler ile bozulduğu için daire işaretçi kullanıyoruz.
-        L.circleMarker(ll, { radius: 9, color: "#b4441c", fillColor: "#e8743b", fillOpacity: 0.9 })
+        L.circleMarker(ll, {
+          radius: 9,
+          color: "#b4441c",
+          fillColor: "#e8743b",
+          fillOpacity: 0.9,
+        })
           .bindPopup(l.name)
           .addTo(map!);
         return ll;
@@ -39,5 +51,13 @@ export function MapView({ locations, height = 320 }: { locations: Location[]; he
   }, [locations]);
 
   if (locations.length === 0) return null;
-  return <div ref={ref} className="map" style={{ height }} role="img" aria-label="Konum haritası" />;
+  return (
+    <div
+      ref={ref}
+      className="map"
+      style={{ height }}
+      role="img"
+      aria-label="Konum haritası"
+    />
+  );
 }

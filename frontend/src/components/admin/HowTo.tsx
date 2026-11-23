@@ -2,7 +2,14 @@
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type Ref,
+} from "react";
 
 const KEY = "blog-admin-howto-hidden";
 
@@ -183,7 +190,10 @@ export function HowTo({ handle }: { handle: Ref<HowToHandle> }) {
           timer = setTimeout(tick, 100);
           return;
         }
-        el?.scrollIntoView({ block: "center", behavior: "instant" as ScrollBehavior });
+        el?.scrollIntoView({
+          block: "center",
+          behavior: "instant" as ScrollBehavior,
+        });
       }
       locate();
       nextRef.current?.focus({ preventScroll: true });
@@ -202,7 +212,9 @@ export function HowTo({ handle }: { handle: Ref<HowToHandle> }) {
   // Açılır pencerenin yüksekliğini ölç (konumlandırma için).
   useEffect(() => {
     if (!active || !popRef.current) return;
-    const ro = new ResizeObserver(() => setPopH(popRef.current?.offsetHeight ?? 200));
+    const ro = new ResizeObserver(() =>
+      setPopH(popRef.current?.offsetHeight ?? 200),
+    );
     ro.observe(popRef.current);
     return () => ro.disconnect();
   }, [active]);
@@ -235,41 +247,100 @@ export function HowTo({ handle }: { handle: Ref<HowToHandle> }) {
   let top: number;
   let left: number;
   if (box) {
-    left = Math.min(Math.max(12, box.left + box.width / 2 - w / 2), vp.w - w - 12);
+    left = Math.min(
+      Math.max(12, box.left + box.width / 2 - w / 2),
+      vp.w - w - 12,
+    );
     const below = box.top + box.height + PAD + 12;
     const above = box.top - PAD - 12 - popH;
-    top = below + popH <= vp.h - 12 ? below : above >= 12 ? above : Math.max(12, vp.h - popH - 12);
+    top =
+      below + popH <= vp.h - 12
+        ? below
+        : above >= 12
+          ? above
+          : Math.max(12, vp.h - popH - 12);
   } else {
     left = (vp.w - w) / 2;
     top = Math.max(12, (vp.h - popH) / 2);
   }
 
   return (
-    <div className="tour" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+    <div
+      className="tour"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tour-title"
+    >
       <div className="tour-block" />
       {box ? (
-        <div className="tour-spot" style={{ top: box.top - PAD, left: box.left - PAD, width: box.width + PAD * 2, height: box.height + PAD * 2 }} />
+        <div
+          className="tour-spot"
+          style={{
+            top: box.top - PAD,
+            left: box.left - PAD,
+            width: box.width + PAD * 2,
+            height: box.height + PAD * 2,
+          }}
+        />
       ) : (
         <div className="tour-dim" />
       )}
       <div ref={popRef} className="tour-pop" style={{ top, left, width: w }}>
         <div className="tour-head">
-          <span className="tour-count">{step + 1} / {STEPS.length}</span>
-          <button type="button" className="icon" aria-label="Turu kapat" onClick={close}><X size={16} /></button>
+          <span className="tour-count">
+            {step + 1} / {STEPS.length}
+          </span>
+          <button
+            type="button"
+            className="icon"
+            aria-label="Turu kapat"
+            onClick={close}
+          >
+            <X size={16} />
+          </button>
         </div>
         <h2 id="tour-title">{s.title}</h2>
         <p>{s.text}</p>
         <label className="howto-check">
-          <input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} /> Bir daha gösterme
+          <input
+            type="checkbox"
+            checked={hide}
+            onChange={(e) => setHide(e.target.checked)}
+          />{" "}
+          Bir daha gösterme
         </label>
         <div className="tour-foot">
-          <button type="button" className="btn small" onClick={close}>Kapat</button>
+          <button type="button" className="btn small" onClick={close}>
+            Kapat
+          </button>
           <span className="spacer" />
-          {step > 0 && <button type="button" className="btn small" onClick={() => go(step - 1)}><ChevronLeft size={14} aria-hidden /> Geri</button>}
+          {step > 0 && (
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => go(step - 1)}
+            >
+              <ChevronLeft size={14} aria-hidden /> Geri
+            </button>
+          )}
           {last ? (
-            <button ref={nextRef} type="button" className="btn small primary" onClick={close}>Başlayalım</button>
+            <button
+              ref={nextRef}
+              type="button"
+              className="btn small primary"
+              onClick={close}
+            >
+              Başlayalım
+            </button>
           ) : (
-            <button ref={nextRef} type="button" className="btn small primary" onClick={() => go(step + 1)}>İleri <ChevronRight size={14} aria-hidden /></button>
+            <button
+              ref={nextRef}
+              type="button"
+              className="btn small primary"
+              onClick={() => go(step + 1)}
+            >
+              İleri <ChevronRight size={14} aria-hidden />
+            </button>
           )}
         </div>
       </div>

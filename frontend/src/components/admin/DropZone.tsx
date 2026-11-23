@@ -18,7 +18,8 @@ export function DropZone({
   className?: string;
 }) {
   const [over, setOver] = useState(false);
-  const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
+  const hasFiles = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer.types).includes("Files");
 
   return (
     <div
@@ -35,7 +36,9 @@ export function DropZone({
         if (!hasFiles(e)) return;
         e.preventDefault();
         setOver(false);
-        const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+        const files = Array.from(e.dataTransfer.files).filter((f) =>
+          f.type.startsWith("image/"),
+        );
         if (files.length) onFiles(files);
       }}
     >

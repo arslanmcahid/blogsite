@@ -29,19 +29,39 @@ import type { HTMLAttributes, ReactNode, Ref } from "react";
  * ilerlediği yöndeki kenarının) hangi satırın içinde kaldığına bakılır.
  */
 const verticalCollision: CollisionDetection = (args) => {
-  const { pointerCoordinates, collisionRect, droppableRects, droppableContainers, active } = args;
+  const {
+    pointerCoordinates,
+    collisionRect,
+    droppableRects,
+    droppableContainers,
+    active,
+  } = args;
   const initial = active.rect.current.initial;
   const movingDown = !!initial && collisionRect.top > initial.top;
   // Fare: imlecin yeri. Klavye: aşağı giderken sürüklenen bölümün alt, yukarı giderken üst kenarı.
-  const y = pointerCoordinates ? pointerCoordinates.y : movingDown ? collisionRect.top + collisionRect.height - 8 : collisionRect.top + 8;
+  const y = pointerCoordinates
+    ? pointerCoordinates.y
+    : movingDown
+      ? collisionRect.top + collisionRect.height - 8
+      : collisionRect.top + 8;
   const hits = droppableContainers.flatMap((container) => {
     const rect = droppableRects.get(container.id);
-    return rect && y >= rect.top && y <= rect.top + rect.height ? [{ id: container.id, data: { droppableContainer: container, value: 0 } }] : [];
+
+    return rect && y >= rect.top && y <= rect.top + rect.height
+      ? [
+          {
+            id: container.id,
+            data: { droppableContainer: container, value: 0 },
+          },
+        ]
+      : [];
   });
   return hits.length ? hits : closestCenter(args);
 };
 
-export type HandleProps = HTMLAttributes<HTMLElement> & { ref: Ref<HTMLButtonElement> };
+export type HandleProps = HTMLAttributes<HTMLElement> & {
+  ref: Ref<HTMLButtonElement>;
+};
 
 /**
  * Sürükleyerek sıralanabilen liste. Tutacaktan (⠿) fare, dokunma ve klavye
@@ -58,11 +78,18 @@ export function SortableList<T extends { id: string }>({
   onChange: (next: T[]) => void;
   layout?: "vertical" | "grid";
   className?: string;
-  children: (item: T, index: number, handle: HandleProps, dragging: boolean) => ReactNode;
+  children: (
+    item: T,
+    index: number,
+    handle: HandleProps,
+    dragging: boolean,
+  ) => ReactNode;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), // yanlışlıkla sürüklemeyi önler
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   function onDragEnd({ active, over }: DragEndEvent) {
@@ -73,8 +100,17 @@ export function SortableList<T extends { id: string }>({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={layout === "grid" ? closestCenter : verticalCollision} onDragEnd={onDragEnd}>
-      <SortableContext items={items.map((i) => i.id)} strategy={layout === "grid" ? rectSortingStrategy : verticalListSortingStrategy}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={layout === "grid" ? closestCenter : verticalCollision}
+      onDragEnd={onDragEnd}
+    >
+      <SortableContext
+        items={items.map((i) => i.id)}
+        strategy={
+          layout === "grid" ? rectSortingStrategy : verticalListSortingStrategy
+        }
+      >
         <div className={className}>
           {items.map((item, index) => (
             <Row key={item.id} id={item.id}>
@@ -87,21 +123,60 @@ export function SortableList<T extends { id: string }>({
   );
 }
 
-function Row({ id, children }: { id: string; children: (handle: HandleProps, dragging: boolean) => ReactNode }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const handle = { ...attributes, ...listeners, ref: setActivatorNodeRef } as HandleProps;
+function Row({
+  id,
+  children,
+}: {
+  id: string;
+  children: (handle: HandleProps, dragging: boolean) => ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  const handle = {
+    ...attributes,
+    ...listeners,
+    ref: setActivatorNodeRef,
+  } as HandleProps;
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 5 : undefined, opacity: isDragging ? 0.85 : 1 }}>
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 5 : undefined,
+        opacity: isDragging ? 0.85 : 1,
+      }}
+    >
       {children(handle, isDragging)}
     </div>
   );
 }
 
 /** Sürükleme tutacağı düğmesi. */
-export function DragHandle({ handle, label = "Sürükleyerek sırala" }: { handle: HandleProps; label?: string }) {
+export function DragHandle({
+  handle,
+  label = "Sürükleyerek sırala",
+}: {
+  handle: HandleProps;
+  label?: string;
+}) {
   const { ref, ...rest } = handle;
   return (
-    <button type="button" ref={ref} className="drag-handle" aria-label={label} title={label} {...rest}>
+    <button
+      type="button"
+      ref={ref}
+      className="drag-handle"
+      aria-label={label}
+      title={label}
+      {...rest}
+    >
       <GripVertical size={16} aria-hidden />
     </button>
   );

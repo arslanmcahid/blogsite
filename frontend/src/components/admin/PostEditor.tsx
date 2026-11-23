@@ -6,10 +6,27 @@ import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { adminFetch, errorMessage, useApi } from "@/lib/admin-api";
 import { type EBlock, TEMPLATES, toApi, toEditor } from "@/lib/editor-model";
-import type { AdminImage, Category, GallerySummary, InfoRow, Location, Post, PostSummary, PostTheme, Source, Tag } from "@/lib/types";
+import type {
+  AdminImage,
+  Category,
+  GallerySummary,
+  InfoRow,
+  Location,
+  Post,
+  PostSummary,
+  PostTheme,
+  Source,
+  Tag,
+} from "@/lib/types";
 import { BlockEditor } from "./BlockEditor";
 import { ImagePicker } from "./ImagePicker";
-import { CategoryCard, InfoCard, RelatedCard, SourcesCard, TagsCard } from "./PostExtras";
+import {
+  CategoryCard,
+  InfoCard,
+  RelatedCard,
+  SourcesCard,
+  TagsCard,
+} from "./PostExtras";
 import { PostPreview } from "./PostPreview";
 import { ThemePicker } from "./ThemePicker";
 import { useToast } from "./Toast";
@@ -27,6 +44,7 @@ type Draft = {
   locIds: number[];
   categoryId: number | null;
   tagIds: number[];
+
   sources: Source[];
   info: InfoRow[];
   relatedIds: number[];
@@ -45,7 +63,10 @@ function draftFromPost(post: Post | null): Draft {
     title: post?.title ?? "",
     excerpt: post?.excerpt ?? "",
     status: post?.status ?? "draft",
-    cover: post?.cover_url && post.cover ? { id: post.cover, url: post.cover_url } : null,
+    cover:
+      post?.cover_url && post.cover
+        ? { id: post.cover, url: post.cover_url }
+        : null,
     blocks: toEditor(post?.blocks ?? []),
     theme: post?.theme ?? {},
     locIds: post?.location_details.map((l) => l.id) ?? [],
@@ -73,8 +94,13 @@ function payloadOf(d: Draft) {
     // Boş bırakılan satırlar kaydedilmez.
     sources: d.sources
       .filter((s) => s.text.trim())
-      .map((s) => ({ text: s.text.trim(), ...(s.url?.trim() ? { url: s.url.trim() } : {}) })),
-    info: d.info.filter((r) => r.label.trim() && r.value.trim()).map((r) => ({ label: r.label.trim(), value: r.value.trim() })),
+      .map((s) => ({
+        text: s.text.trim(),
+        ...(s.url?.trim() ? { url: s.url.trim() } : {}),
+      })),
+    info: d.info
+      .filter((r) => r.label.trim() && r.value.trim())
+      .map((r) => ({ label: r.label.trim(), value: r.value.trim() })),
     related: d.relatedIds,
     published_at: d.publishedAt ? new Date(d.publishedAt).toISOString() : null,
   };
@@ -82,7 +108,15 @@ function payloadOf(d: Draft) {
 
 const snapshotOf = (d: Draft) => JSON.stringify(payloadOf(d));
 
-function PostForm({ post, locations, galleries, allPosts, initialCategories, initialTags, onSaved }: {
+function PostForm({
+  post,
+  locations,
+  galleries,
+  allPosts,
+  initialCategories,
+  initialTags,
+  onSaved,
+}: {
   post: Post | null;
   locations: Location[];
   galleries: GallerySummary[];
@@ -98,12 +132,15 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
 
   const slug = post?.slug ?? null;
   const [draft, setDraft] = useState<Draft>(() => draftFromPost(post));
-  const [savedSnapshot, setSavedSnapshot] = useState(() => snapshotOf(draftFromPost(post)));
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    snapshotOf(draftFromPost(post)),
+  );
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [tab, setTab] = useState<"edit" | "preview">("edit");
 
-  const update = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
+  const update = (patch: Partial<Draft>) =>
+    setDraft((d) => ({ ...d, ...patch }));
   const snapshot = useMemo(() => snapshotOf(draft), [draft]);
   const dirty = snapshot !== savedSnapshot;
 
@@ -119,20 +156,37 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
     try {
       const body = payloadOf(sent);
       const saved = slug
-        ? await adminFetch<Post>(`/api/posts/${encodeURIComponent(slug)}/`, { method: "PATCH", json: body })
+        ? await adminFetch<Post>(`/api/posts/${encodeURIComponent(slug)}/`, {
+            method: "PATCH",
+            json: body,
+          })
         : await adminFetch<Post>("/api/posts/", { method: "POST", json: body });
 
       // Yayınlanınca sunucu tarihi doldurabilir; formu bununla eşitle.
       const publishedAt = toLocalInput(saved.published_at);
       setSavedSnapshot(snapshotOf({ ...sent, publishedAt }));
-      setDraft((d) => (d.publishedAt === sent.publishedAt ? { ...d, publishedAt } : d));
+      setDraft((d) =>
+        d.publishedAt === sent.publishedAt ? { ...d, publishedAt } : d,
+      );
       toast.success(
-        sent.status === "published" ? "Yazı kaydedildi ve yayında." : "Yazı taslak olarak kaydedildi.",
-        sent.status === "published" ? { label: "Sitede gör", onClick: () => window.open(`/yazilar/${encodeURIComponent(saved.slug)}`, "_blank") } : undefined,
+        sent.status === "published"
+          ? "Yazı kaydedildi ve yayında."
+          : "Yazı taslak olarak kaydedildi.",
+        sent.status === "published"
+          ? {
+              label: "Sitede gör",
+              onClick: () =>
+                window.open(
+                  `/yazilar/${encodeURIComponent(saved.slug)}`,
+                  "_blank",
+                ),
+            }
+          : undefined,
       );
       // Sayfa kaydedilen veriyle baştan yüklenir: eski taslak, açık sekmeler ve geçici durum unutulur.
       window.scrollTo({ top: 0 });
-      if (!slug) router.replace(`/admin/posts/${encodeURIComponent(saved.slug)}`);
+      if (!slug)
+        router.replace(`/admin/posts/${encodeURIComponent(saved.slug)}`);
       else onSaved();
     } catch (e) {
       setSaveFailed(true);
@@ -167,9 +221,12 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
   }, [dirty]);
 
   async function remove() {
-    if (!slug || !confirm("Bu yazı silinsin mi? Bu işlem geri alınamaz.")) return;
+    if (!slug || !confirm("Bu yazı silinsin mi? Bu işlem geri alınamaz."))
+      return;
     try {
-      await adminFetch(`/api/posts/${encodeURIComponent(slug)}/`, { method: "DELETE" });
+      await adminFetch(`/api/posts/${encodeURIComponent(slug)}/`, {
+        method: "DELETE",
+      });
       toast.success("Yazı silindi.");
       router.replace("/admin/posts");
     } catch (e) {
@@ -179,55 +236,126 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
 
   // Önizleme için (yazarken takılmasın diye ertelenmiş değerlerle)
   const deferred = useDeferredValue(draft);
-  const previewBlocks = useMemo(() => toApi(deferred.blocks), [deferred.blocks]);
-  const previewLocations = useMemo(() => locations.filter((l) => deferred.locIds.includes(l.id)), [locations, deferred.locIds]);
-  const ctx = useMemo(() => ({ galleries: galleries.map((g) => ({ slug: g.slug, title: g.title })), locations }), [galleries, locations]);
+  const previewBlocks = useMemo(
+    () => toApi(deferred.blocks),
+    [deferred.blocks],
+  );
+  const previewLocations = useMemo(
+    () => locations.filter((l) => deferred.locIds.includes(l.id)),
+    [locations, deferred.locIds],
+  );
+  const ctx = useMemo(
+    () => ({
+      galleries: galleries.map((g) => ({ slug: g.slug, title: g.title })),
+      locations,
+    }),
+    [galleries, locations],
+  );
 
   const emptyNewPost = !slug && draft.blocks.length === 0;
 
   return (
     <div>
       <div className="form-head">
-        <Link href="/admin/posts" className="back"><ArrowLeft size={16} aria-hidden /> Yazılar</Link>
+        <Link href="/admin/posts" className="back">
+          <ArrowLeft size={16} aria-hidden /> Yazılar
+        </Link>
         <span className={`state ${saveFailed ? "bad" : ""}`} aria-live="polite">
-          {saving ? "Kaydediliyor…" : saveFailed ? "Kaydedilemedi" : dirty ? "Kaydedilmemiş değişiklikler var" : slug ? "Tüm değişiklikler kaydedildi" : ""}
+          {saving
+            ? "Kaydediliyor…"
+            : saveFailed
+              ? "Kaydedilemedi"
+              : dirty
+                ? "Kaydedilmemiş değişiklikler var"
+                : slug
+                  ? "Tüm değişiklikler kaydedildi"
+                  : ""}
         </span>
         <span className="spacer" />
         <div className="tabs" role="tablist" aria-label="Görünüm">
-          <button role="tab" aria-selected={tab === "edit"} className={tab === "edit" ? "on" : ""} onClick={() => setTab("edit")}>Düzenle</button>
-          <button role="tab" aria-selected={tab === "preview"} className={tab === "preview" ? "on" : ""} onClick={() => setTab("preview")}>Önizleme</button>
+          <button
+            role="tab"
+            aria-selected={tab === "edit"}
+            className={tab === "edit" ? "on" : ""}
+            onClick={() => setTab("edit")}
+          >
+            Düzenle
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === "preview"}
+            className={tab === "preview" ? "on" : ""}
+            onClick={() => setTab("preview")}
+          >
+            Önizleme
+          </button>
         </div>
-        <button className="btn primary" onClick={save} disabled={saving}>{saving ? "Kaydediliyor…" : "Kaydet"}</button>
+        <button className="btn primary" onClick={save} disabled={saving}>
+          {saving ? "Kaydediliyor…" : "Kaydet"}
+        </button>
       </div>
 
       {tab === "preview" ? (
         <div className="preview-frame">
-          <div className="preview-label">Önizleme: ziyaretçiler yazıyı yaklaşık böyle görecek</div>
+          <div className="preview-label">
+            Önizleme: ziyaretçiler yazıyı yaklaşık böyle görecek
+          </div>
           <PostPreview
             title={deferred.title}
             excerpt={deferred.excerpt}
             coverUrl={deferred.cover?.url ?? null}
-            publishedAt={deferred.publishedAt ? new Date(deferred.publishedAt).toISOString() : null}
+            publishedAt={
+              deferred.publishedAt
+                ? new Date(deferred.publishedAt).toISOString()
+                : null
+            }
             blocks={previewBlocks}
             theme={deferred.theme}
             locations={locations}
             postLocations={previewLocations}
-            category={categories.find((c) => c.id === deferred.categoryId) ?? null}
-            tags={deferred.tagIds.flatMap((id) => tags.filter((t) => t.id === id))}
+            category={
+              categories.find((c) => c.id === deferred.categoryId) ?? null
+            }
+            tags={deferred.tagIds.flatMap((id) =>
+              tags.filter((t) => t.id === id),
+            )}
             info={deferred.info.filter((r) => r.label.trim() && r.value.trim())}
             sources={deferred.sources.filter((s) => s.text.trim())}
-            related={deferred.relatedIds.flatMap((id) => allPosts.filter((p) => p.id === id)).map((p) => ({ id: p.id, slug: p.slug, title: p.title, cover_url: p.cover_url }))}
+            related={deferred.relatedIds
+              .flatMap((id) => allPosts.filter((p) => p.id === id))
+              .map((p) => ({
+                id: p.id,
+                slug: p.slug,
+                title: p.title,
+                cover_url: p.cover_url,
+              }))}
           />
         </div>
       ) : (
         <div className="form-grid">
           <div className="form-main">
             <div className="card stack" data-tour="post-title">
-              <label>Başlık *
-                <input value={draft.title} onChange={(e) => update({ title: e.target.value })} placeholder="Yazının başlığı" maxLength={200} className="title-input" />
+              <label>
+                Başlık *
+                <input
+                  value={draft.title}
+                  onChange={(e) => update({ title: e.target.value })}
+                  placeholder="Yazının başlığı"
+                  maxLength={200}
+                  className="title-input"
+                />
               </label>
-              <label>Kısa özet <span className="muted">(yazı listelerinde ve paylaşımlarda görünür)</span>
-                <textarea rows={2} maxLength={400} value={draft.excerpt} onChange={(e) => update({ excerpt: e.target.value })} />
+              <label>
+                Kısa özet{" "}
+                <span className="muted">
+                  (yazı listelerinde ve paylaşımlarda görünür)
+                </span>
+                <textarea
+                  rows={2}
+                  maxLength={400}
+                  value={draft.excerpt}
+                  onChange={(e) => update({ excerpt: e.target.value })}
+                />
               </label>
             </div>
 
@@ -239,37 +367,85 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
                   <div className="template-row">
                     <span className="muted small">Şablonla başla:</span>
                     {TEMPLATES.filter((t) => t.id !== "blank").map((t) => (
-                      <button key={t.id} type="button" className="btn small" title={t.description} onClick={() => update({ blocks: toEditor(t.blocks), theme: t.theme })}>
+                      <button
+                        key={t.id}
+                        type="button"
+                        className="btn small"
+                        title={t.description}
+                        onClick={() =>
+                          update({ blocks: toEditor(t.blocks), theme: t.theme })
+                        }
+                      >
                         {t.title}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              <BlockEditor value={draft.blocks} onChange={(blocks) => update({ blocks })} ctx={ctx} />
+              <BlockEditor
+                value={draft.blocks}
+                onChange={(blocks) => update({ blocks })}
+                ctx={ctx}
+              />
             </div>
 
-            <InfoCard value={draft.info} onChange={(info) => update({ info })} />
-            <SourcesCard value={draft.sources} onChange={(sources) => update({ sources })} />
-            <RelatedCard posts={allPosts} currentId={post?.id ?? null} value={draft.relatedIds} onChange={(relatedIds) => update({ relatedIds })} />
+            <InfoCard
+              value={draft.info}
+              onChange={(info) => update({ info })}
+            />
+            <SourcesCard
+              value={draft.sources}
+              onChange={(sources) => update({ sources })}
+            />
+            <RelatedCard
+              posts={allPosts}
+              currentId={post?.id ?? null}
+              value={draft.relatedIds}
+              onChange={(relatedIds) => update({ relatedIds })}
+            />
           </div>
 
           <aside className="form-side" aria-label="Yazı ayarları">
             <div className="card stack" data-tour="post-status">
               <h2>Yayın</h2>
-              <label>Durum
-                <select value={draft.status} onChange={(e) => update({ status: e.target.value as Status })}>
+              <label>
+                Durum
+                <select
+                  value={draft.status}
+                  onChange={(e) => update({ status: e.target.value as Status })}
+                >
                   <option value="draft">Taslak (sadece sen görürsün)</option>
-                  <option value="published">Yayında (ziyaretçiler görür)</option>
+                  <option value="published">
+                    Yayında (ziyaretçiler görür)
+                  </option>
                 </select>
               </label>
-              <label>Yayın tarihi <span className="muted">(boşsa kaydettiğin an)</span>
-                <input type="datetime-local" value={draft.publishedAt} onChange={(e) => update({ publishedAt: e.target.value })} />
+              <label>
+                Yayın tarihi{" "}
+                <span className="muted">(boşsa kaydettiğin an)</span>
+                <input
+                  type="datetime-local"
+                  value={draft.publishedAt}
+                  onChange={(e) => update({ publishedAt: e.target.value })}
+                />
               </label>
               <div className="row">
-                <button className="btn primary" style={{ flex: 1 }} onClick={save} disabled={saving}>Kaydet</button>
+                <button
+                  className="btn primary"
+                  style={{ flex: 1 }}
+                  onClick={save}
+                  disabled={saving}
+                >
+                  Kaydet
+                </button>
                 {slug && post?.status === "published" && (
-                  <Link className="btn" href={`/yazilar/${encodeURIComponent(slug)}`} target="_blank">Sitede gör</Link>
+                  <Link
+                    className="btn"
+                    href={`/yazilar/${encodeURIComponent(slug)}`}
+                    target="_blank"
+                  >
+                    Sitede gör
+                  </Link>
                 )}
               </div>
             </div>
@@ -281,25 +457,87 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
                 <img className="thumb" src={draft.cover.url} alt="" />
               )}
               <div className="row">
-                <ImagePicker label={draft.cover ? "Değiştir" : "Kapak seç"} onPick={(img: AdminImage) => update({ cover: { id: img.id, url: img.url } })} />
-                {draft.cover && <button type="button" className="btn" onClick={() => update({ cover: null })}>Kaldır</button>}
+                <ImagePicker
+                  label={draft.cover ? "Değiştir" : "Kapak seç"}
+                  onPick={(img: AdminImage) =>
+                    update({ cover: { id: img.id, url: img.url } })
+                  }
+                />
+                {draft.cover && (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => update({ cover: null })}
+                  >
+                    Kaldır
+                  </button>
+                )}
               </div>
             </div>
 
-            <div data-tour="post-taxonomy" className="stack" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <CategoryCard categories={categories} value={draft.categoryId} onChange={(categoryId) => update({ categoryId })} onCreated={(c) => setCategories((l) => [...l, c].sort((a, b) => a.name.localeCompare(b.name, "tr")))} />
-            <TagsCard tags={tags} value={draft.tagIds} onChange={(tagIds) => update({ tagIds })} onCreated={(t) => setTags((l) => [...l, t].sort((a, b) => a.name.localeCompare(b.name, "tr")))} />
+            <div
+              data-tour="post-taxonomy"
+              className="stack"
+              style={{ display: "flex", flexDirection: "column", gap: 16 }}
+            >
+              <CategoryCard
+                categories={categories}
+                value={draft.categoryId}
+                onChange={(categoryId) => update({ categoryId })}
+                onCreated={(c) =>
+                  setCategories((l) =>
+                    [...l, c].sort((a, b) =>
+                      a.name.localeCompare(b.name, "tr"),
+                    ),
+                  )
+                }
+              />
+              <TagsCard
+                tags={tags}
+                value={draft.tagIds}
+                onChange={(tagIds) => update({ tagIds })}
+                onCreated={(t) =>
+                  setTags((l) =>
+                    [...l, t].sort((a, b) =>
+                      a.name.localeCompare(b.name, "tr"),
+                    ),
+                  )
+                }
+              />
             </div>
 
             <div className="card stack">
               <h2>Konumlar</h2>
               {locations.length === 0 ? (
-                <p className="muted small" style={{ margin: 0 }}>Henüz konum yok. <Link href="/admin/locations" target="_blank" style={{ textDecoration: "underline" }}>Konumlar</Link> sayfasından haritaya bir yer ekleyebilirsin.</p>
+                <p className="muted small" style={{ margin: 0 }}>
+                  Henüz konum yok.{" "}
+                  <Link
+                    href="/admin/locations"
+                    target="_blank"
+                    style={{ textDecoration: "underline" }}
+                  >
+                    Konumlar
+                  </Link>{" "}
+                  sayfasından haritaya bir yer ekleyebilirsin.
+                </p>
               ) : (
                 <div className="chips">
                   {locations.map((l) => (
-                    <label key={l.id} className={`chip ${draft.locIds.includes(l.id) ? "on" : ""}`}>
-                      <input type="checkbox" checked={draft.locIds.includes(l.id)} onChange={() => update({ locIds: draft.locIds.includes(l.id) ? draft.locIds.filter((x) => x !== l.id) : [...draft.locIds, l.id] })} />
+                    <label
+                      key={l.id}
+                      className={`chip ${draft.locIds.includes(l.id) ? "on" : ""}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={draft.locIds.includes(l.id)}
+                        onChange={() =>
+                          update({
+                            locIds: draft.locIds.includes(l.id)
+                              ? draft.locIds.filter((x) => x !== l.id)
+                              : [...draft.locIds, l.id],
+                          })
+                        }
+                      />
                       {l.name}
                     </label>
                   ))}
@@ -309,14 +547,23 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
 
             <div className="card stack">
               <h2>Görünüm</h2>
-              <ThemePicker theme={draft.theme} onChange={(theme) => update({ theme })} />
+              <ThemePicker
+                theme={draft.theme}
+                onChange={(theme) => update({ theme })}
+              />
             </div>
 
             {slug && (
               <div className="card stack">
                 <h2>Yazıyı sil</h2>
-                <p className="muted small" style={{ margin: 0 }}>Silinen yazı geri getirilemez.</p>
-                <div><button type="button" className="btn danger" onClick={remove}>Bu yazıyı sil</button></div>
+                <p className="muted small" style={{ margin: 0 }}>
+                  Silinen yazı geri getirilemez.
+                </p>
+                <div>
+                  <button type="button" className="btn danger" onClick={remove}>
+                    Bu yazıyı sil
+                  </button>
+                </div>
               </div>
             )}
           </aside>
@@ -327,16 +574,43 @@ function PostForm({ post, locations, galleries, allPosts, initialCategories, ini
 }
 
 export function PostEditor({ slug }: { slug?: string }) {
-  const post = useApi<Post>(slug ? `/api/posts/${encodeURIComponent(slug)}/` : null);
+  const post = useApi<Post>(
+    slug ? `/api/posts/${encodeURIComponent(slug)}/` : null,
+  );
   const locs = useApi<Location[]>("/api/locations/");
   const gals = useApi<GallerySummary[]>("/api/galleries/");
   const all = useApi<PostSummary[]>("/api/posts/");
   const cats = useApi<Category[]>("/api/categories/");
   const tgs = useApi<Tag[]>("/api/tags/");
 
-  const error = post.error ?? locs.error ?? gals.error ?? all.error ?? cats.error ?? tgs.error;
+  const error =
+    post.error ??
+    locs.error ??
+    gals.error ??
+    all.error ??
+    cats.error ??
+    tgs.error;
   if (error) return <p className="admin-error">{error.message}</p>;
-  if ((slug && !post.data) || !locs.data || !gals.data || !all.data || !cats.data || !tgs.data) return <p className="muted">Yükleniyor…</p>;
+  if (
+    (slug && !post.data) ||
+    !locs.data ||
+    !gals.data ||
+    !all.data ||
+    !cats.data ||
+    !tgs.data
+  )
+    return <p className="muted">Yükleniyor…</p>;
   // key: farklı yazıya geçildiğinde form durumu sıfırlansın
-  return <PostForm key={`${slug ?? "new"}:${post.data?.updated_at ?? ""}`} onSaved={post.reload} post={post.data ?? null} locations={locs.data} galleries={gals.data} allPosts={all.data} initialCategories={cats.data} initialTags={tgs.data} />;
+  return (
+    <PostForm
+      key={`${slug ?? "new"}:${post.data?.updated_at ?? ""}`}
+      onSaved={post.reload}
+      post={post.data ?? null}
+      locations={locs.data}
+      galleries={gals.data}
+      allPosts={all.data}
+      initialCategories={cats.data}
+      initialTags={tgs.data}
+    />
+  );
 }

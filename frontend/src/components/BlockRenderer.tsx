@@ -30,7 +30,9 @@ async function BlockItem({ block }: { block: InnerBlock }) {
       if (!gallery) return null; // silinmiş/yayında olmayan galeri: sessizce atla
       return (
         <section className="block-gallery">
-          <h3><Link href={`/galeri/${gallery.slug}`}>{gallery.title}</Link></h3>
+          <h3>
+            <Link href={`/galeri/${gallery.slug}`}>{gallery.title}</Link>
+          </h3>
           <GalleryGrid items={gallery.items} />
         </section>
       );
@@ -38,7 +40,9 @@ async function BlockItem({ block }: { block: InnerBlock }) {
     case "video":
       return <VideoEmbed url={block.url} />;
     case "map": {
-      const locations = (await getLocations()).filter((l) => l.id === block.location);
+      const locations = (await getLocations()).filter(
+        (l) => l.id === block.location,
+      );
       return <MapView locations={locations} />;
     }
     default:
@@ -52,10 +56,16 @@ export function BlockRenderer({ blocks }: { blocks: Block[] }) {
       {blocks.map((block, i) =>
         block.type === "columns" ? (
           // Gazete düzeni: kolonlar yan yana, dar ekranda alt alta.
-          <div key={i} className="block-columns" style={{ "--cols": block.columns.length } as React.CSSProperties}>
+          <div
+            key={i}
+            className="block-columns"
+            style={{ "--cols": block.columns.length } as React.CSSProperties}
+          >
             {block.columns.map((col, ci) => (
               <div key={ci} className="column">
-                {col.map((inner, bi) => <BlockItem key={bi} block={inner} />)}
+                {col.map((inner, bi) => (
+                  <BlockItem key={bi} block={inner} />
+                ))}
               </div>
             ))}
           </div>
